@@ -1,0 +1,57 @@
+{
+  "name": "@codeunicorn/api",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@codeunicorn/database": "workspace:*",
+    "@codeunicorn/types": "workspace:*",
+    "@codeunicorn/github": "workspace:*",
+    "@codeunicorn/ai": "workspace:*",
+    "@codeunicorn/inngest": "workspace:*",
+
+
+    "express": "^4.21.0",
+    "cors": "^2.8.5",
+    "helmet": "^8.0.0",
+    "morgan": "^1.10.0",
+    "cookie-parser": "^1.4.7",
+
+    "better-auth": "^1.4.10",
+    
+    "octokit": "^5.0.5",
+
+    "@ai-sdk/google": "^3.0.10",
+    "ai": "^6.0.42",
+    "@pinecone-database/pinecone": "^6.1.3",
+    "tokenlens": "^1.3.1",
+
+    "@polar-sh/better-auth": "^1.6.4",
+    "@polar-sh/sdk": "^0.42.2",
+
+    "pg": "^8.16.3",
+
+       
+    "nanoid": "^5.1.6",
+    "date-fns": "^4.1.0",
+    "zod": "^4.3.5",
+    "dotenv": "^17.2.3"
+ 
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/cors": "^2.8.17",
+    "@types/morgan": "^1.9.9",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/cookie-parser": "^1.4.7",
+    "@types/node": "^20",
+    "@types/pg": "^8.16.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

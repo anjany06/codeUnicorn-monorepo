@@ -1,0 +1,23 @@
+{
+  "name": "@codeunicorn/ai",
+  "version": "1.0.0",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@ai-sdk/google": "^3.0.10",
+    "@pinecone-database/pinecone": "^6.1.3",
+    "ai": "^4.3.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  }
+}

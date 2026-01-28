@@ -1,0 +1,25 @@
+{
+  "name": "@codeunicorn/inngest",
+  "version": "1.0.0",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "inngest": "^3.0.0",
+    "@codeunicorn/database": "workspace:*",
+    "@codeunicorn/github": "workspace:*",
+    "@codeunicorn/ai": "workspace:*",
+    "@codeunicorn/types": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  }
+}
