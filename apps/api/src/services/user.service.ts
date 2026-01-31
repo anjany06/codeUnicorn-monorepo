@@ -2,6 +2,8 @@ import { prisma } from "@codeunicorn/database";
 
 // Same logic as your server action, just extracted
 export async function getUserProfileById(userId: string) {
+
+  try {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
@@ -14,12 +16,20 @@ export async function getUserProfileById(userId: string) {
   });
 
   return user;
+} catch (error) {
+  console.error("Error fetching user profile:", error);
+  return null;
+}
 }
 
 export async function updateUserProfileById(
   userId: string,
   data: { name?: string; email?: string }
 ) {
+
+  try {
+    
+ 
   const updatedUser = await prisma.user.update({
     where: { id: userId },
     data: {
@@ -35,4 +45,11 @@ export async function updateUserProfileById(
   });
 
   return updatedUser;
+} catch (error) {
+  console.error("Error updating user profile:", error);
+  return {
+    success:false,
+    error: "Failed to update profile"
+  }
+}
 }

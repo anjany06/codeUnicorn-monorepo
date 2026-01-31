@@ -6,6 +6,7 @@ import { fromNodeHeaders } from "better-auth/node";
 export interface AuthRequest extends Request {
   session?: Session;
   user?: User;
+  userId?: string;
 }
 
 export async function authMiddleware(
@@ -28,6 +29,7 @@ export async function authMiddleware(
 
     req.session = session;
     req.user = session.user;
+    req.userId = session.user.id;
 
     next();
   } catch (error) {

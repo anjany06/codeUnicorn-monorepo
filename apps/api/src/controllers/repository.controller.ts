@@ -56,22 +56,22 @@ export async function connectRepository(req: AuthRequest, res: Response) {
   }
 }
 
-export async function disconnectRepository(req: AuthRequest, res: Response) {
-  try {
-    const userId = req.user!.id;
-    const { id } = req.params;
+// export async function disconnectRepository(req: AuthRequest, res: Response) {
+//   try {
+//     const userId = req.user!.id;
+//     // const { id } = req.params;
 
-    await repositoryService.disconnectRepository(userId, id);
+//     await repositoryService.disconnectRepository(userId);
 
-    res.json({
-      success: true,
-      message: "Repository disconnected successfully",
-    });
-  } catch (error: any) {
-    console.error("Error disconnecting repository:", error);
-    res.status(400).json({
-      success: false,
-      error: error.message || "Failed to disconnect repository",
-    });
-  }
-}
+//     res.json({
+//       success: true,
+//       message: "Repository disconnected successfully",
+//     });
+//   } catch (error: any) {
+//     console.error("Error disconnecting repository:", error);
+//     res.status(400).json({
+//       success: false,
+//       error: error.message || "Failed to disconnect repository",
+//     });
+//   }
+// }

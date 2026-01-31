@@ -1,8 +1,8 @@
-import { Router } from "express";
+import { Router, type Router as RouterType } from "express";
 import { authMiddleware } from "../middleware/auth.middleware";
 import * as dashboardController from "../controllers/dashboard.controller";
 
-export const dashboardRouter = Router();
+export const dashboardRouter: RouterType = Router();
 
 // GET /api/dashboard/stats
 dashboardRouter.get("/stats", authMiddleware, dashboardController.getStats);

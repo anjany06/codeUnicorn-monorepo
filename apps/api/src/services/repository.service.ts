@@ -1,5 +1,5 @@
 import { prisma } from "@codeunicorn/database";
-import { Octokit } from "octokit";
+import { Octokit } from "@octokit/rest";
 import { inngest } from "../lib/inngest";
 
 export async function getGithubToken(userId: string): Promise<string | null> {

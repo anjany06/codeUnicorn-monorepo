@@ -1,5 +1,5 @@
 import { prisma } from "@codeunicorn/database";
-import { Octokit } from "octokit";
+import { Octokit } from "@octokit/rest";
 
 // Helper to get GitHub token
 export async function getGithubToken(userId: string): Promise<string | null> {
@@ -9,6 +9,11 @@ export async function getGithubToken(userId: string): Promise<string | null> {
       providerId: "github",
     },
   });
+
+  if(!account?.accessToken){
+    console.error("No GitHub access token found for user:", userId);
+    throw new Error("No GitHub access token found");
+  }
 
   return account?.accessToken || null;
 }
@@ -47,6 +52,8 @@ export async function fetchUserContribution(token: string, username: string) {
 // Get dashboard stats - same logic as your server action
 export async function getDashboardStats(userId: string) {
   const token = await getGithubToken(userId);
+
+  try{
 
   if (!token) {
     throw new Error("GitHub token not found");
@@ -88,10 +95,21 @@ export async function getDashboardStats(userId: string) {
     totalReviews,
     totalRepos,
   };
+} catch (error) {
+  console.log("Error fetching dashboard Stats: ", error);
+  return{
+    totalCommits:0,
+    totalPRs:0,
+    totalReviews:0,
+    totalRepos:0
+  };
+}
 }
 
 // Get monthly activity - same logic as your server action
 export async function getMonthlyActivity(userId: string) {
+
+  try{
   const token = await getGithubToken(userId);
 
   if (!token) {
@@ -188,4 +206,9 @@ export async function getMonthlyActivity(userId: string) {
       reviews: monthlyData[key].reviews,
     };
   });
+} 
+catch (error) {
+  console.error("Error fetching monthly activity:", error);
+  return [];
+}
 }

@@ -1,8 +1,8 @@
-import { Router } from "express";
+import { Router,type Router as RouterType } from "express";
 import { authMiddleware } from "../middleware/auth.middleware";
 import * as repositoryController from "../controllers/repository.controller";
 
-export const repositoryRouter = Router();
+export const repositoryRouter :RouterType = Router();
 
 // GET /api/repositories
 repositoryRouter.get("/", authMiddleware, repositoryController.getRepositories);
@@ -11,4 +11,4 @@ repositoryRouter.get("/", authMiddleware, repositoryController.getRepositories);
 repositoryRouter.post("/connect", authMiddleware, repositoryController.connectRepository);
 
 // DELETE /api/repositories/:id
-repositoryRouter.delete("/:id", authMiddleware, repositoryController.disconnectRepository);
+// repositoryRouter.delete("/:id", authMiddleware, repositoryController.disconnectRepository);
