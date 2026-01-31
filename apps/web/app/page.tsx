@@ -1,13 +1,9 @@
-import { SignInButton } from "@/components/auth/sign-in-button";
-import { Button } from "@/components/ui/button";
-import React from "react";
+"use client";
+// app/page.tsx - Server Component
+import { redirect } from "next/navigation";
 
-const page = () => {
-  return (
-    <div className="text-5xl">
-      <SignInButton />
-    </div>
-  );
-};
-
-export default page;
+export default function Home() {
+  // This page only renders if middleware allows it
+  // If authenticated, show dashboard content or redirect
+  redirect("/dashboard");
+}

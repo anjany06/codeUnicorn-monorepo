@@ -7,7 +7,7 @@ const protectedRoutes = ["/dashboard", "/settings", "/repositories"];
 // Routes that should redirect to dashboard if authenticated
 const authRoutes = ["/login", "/signup"];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Check for session cookie (Better Auth uses this)
@@ -35,6 +35,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/",
     "/dashboard/:path*",
     "/settings/:path*",
     "/repositories/:path*",
