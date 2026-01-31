@@ -23,8 +23,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
-import Logout from "@/module/auth/components/logout";
+
 import { Button } from "./ui/button";
+import Logout from "./auth/logout";
 
 export const AppSidebar = () => {
   const { theme, setTheme } = useTheme();

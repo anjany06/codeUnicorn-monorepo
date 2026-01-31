@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/components/providers/auth-provider";
 import { SignInButton } from "./sign-in-button";
-import { SignOutButton } from "./sign-out-button";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,7 +53,7 @@ export function UserButton() {
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem>
-          <SignOutButton />
+          
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
