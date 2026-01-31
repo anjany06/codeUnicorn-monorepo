@@ -36,13 +36,13 @@ export async function fetchRepositories(userId: string, page: number = 1, perPag
     id: repo.id,
     name: repo.name,
     owner: repo.owner.login,
-    fullName: repo.full_name,
-    url: repo.html_url,
+    full_name: repo.full_name,
+    html_url: repo.html_url,
     description: repo.description,
     language: repo.language,
-    stargazersCount: repo.stargazers_count,
-    forksCount: repo.forks_count,
-    updatedAt: repo.updated_at,
+    stargazers_count: repo.stargazers_count,
+    forks_count: repo.forks_count,
+    updated_at: repo.updated_at,
     isConnected: connectedRepoIds.has(BigInt(repo.id)),
   }));
 }

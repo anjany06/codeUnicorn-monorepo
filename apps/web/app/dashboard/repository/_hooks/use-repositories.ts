@@ -1,7 +1,8 @@
 "use client";
 
+import { fetchRepositories } from "@/lib/api";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { fetchRepositories } from "../actions";
+
 
 
 export const useRepositories = ()=>{
