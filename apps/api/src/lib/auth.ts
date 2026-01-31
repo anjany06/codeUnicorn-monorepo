@@ -18,7 +18,7 @@ export const auth = betterAuth({
       clientId: process.env.GITHUB_CLIENT_ID!,
       clientSecret: process.env.GITHUB_CLIENT_SECRET!,
       // Important: Request these scopes for your app
-      scope: ["user:email", "repo", "read:org"],
+      scope: ["repo"], // bcoz we want to access the repo of currently logged in user's 
     },
   },
   
