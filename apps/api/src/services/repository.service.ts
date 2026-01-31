@@ -71,7 +71,7 @@ export async function connectRepository(
   const octokit = new Octokit({ auth: token });
 
   // Create webhook
-  const webhookUrl = `${process.env.API_URL}/api/webhooks/github`;
+  const webhookUrl = `${process.env.API_NROK_URL}/api/webhooks/github`;
 
   try {
     // Check if webhook already exists
@@ -91,8 +91,7 @@ export async function connectRepository(
           content_type: "json",
           secret: process.env.GITHUB_WEBHOOK_SECRET!,
         },
-        events: ["pull_request", "push"],
-        active: true,
+        events: ["pull_request"],
       });
     }
   } catch (error) {
@@ -113,17 +112,29 @@ export async function connectRepository(
   });
 
   // Trigger indexing via Inngest
-  await inngest.send({
-    name: "repository.connected",
-    data: {
-      owner,
-      repo,
-      userId,
-      repositoryId: repository.id,
-    },
-  });
 
-  return repository;
+  // try{
+  // await inngest.send({
+  //   name: "repository.connected",
+  //   data: {
+  //     owner,
+  //     repo,
+  //     userId,
+  //     repositoryId: repository.id,
+  //   },
+  // });
+  // }
+  // catch (error) {
+  //   console.error("Failed to send inngest event:", error);
+  // }
+  
+  // Convert BigInt to string for JSON serialization
+  return {
+    ...repository,
+    githubId: repository.githubId.toString(),
+    createdAt: repository.createdAt.toISOString(),
+    updatedAt: repository.updatedAt.toISOString(),
+  };
 }
 
 export async function disconnectRepository(userId: string, repositoryId: string) {

@@ -1,37 +1,33 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { connectRepository } from "../actions";
 import { toast } from "sonner";
-import { github } from "better-auth";
+import { connectRepository } from "@/lib/api";
+
+type ConnectRepoInput = {
+  owner: string;
+  repo: string;
+  githubId: number;
+};
 
 export const useConnectRepository = () => {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: async ({
-      owner,
-      repo,
-      githubId,
-    }:{
-      owner: string;
-      repo: string;
-      githubId: number;
-
-    }) =>{
-      return await connectRepository(owner, repo, githubId);
+  return useMutation<void, Error, ConnectRepoInput>({
+    mutationFn: async ({ owner, repo, githubId }) => {
+      await connectRepository(owner, repo, githubId);
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       toast.success("Repository connected successfully!");
       queryClient.invalidateQueries({
         queryKey: ["repositories"],
       });
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toast.error(
-        error?.message || "Failed to connect repository. Please try again."
+        error.message || "Failed to connect repository. Please try again."
       );
       console.error("Error connecting repository:", error);
-    }
-  })
-}
+    },
+  });
+};

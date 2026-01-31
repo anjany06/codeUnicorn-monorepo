@@ -15,14 +15,12 @@ import { ExternalLink, Star, Search } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useRepositories } from "./_hooks/use-repositories";
 import { RepositoryListSkeleton } from "./_components/repository-skeleton";
-
-
-
-
+import { useConnectRepository } from "./_hooks/use-connect-repository";
 
 interface Repository {
   id: number;
   name: string;
+  owner: string;
   full_name: string;
   description: string;
   html_url: string;
@@ -42,7 +40,7 @@ const RepositoryPage = () => {
     isFetchingNextPage,
   } = useRepositories();
 
-  // const { mutate: connectRepo } = useConnectRepository();
+  const { mutate: connectRepo } = useConnectRepository();
 
   const [localConnectingId, setLocalConnectingId] = useState<number | null>(
     null
@@ -101,19 +99,19 @@ const RepositoryPage = () => {
       repo.full_name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // const handleConnect = (repo: Repository) => {
-  //   setLocalConnectingId(repo.id);
-  //   connectRepo(
-  //     {
-  //       owner: repo.full_name.split("/")[0],
-  //       repo: repo.name,
-  //       githubId: repo.id,
-  //     },
-  //     {
-  //       onSettled: () => setLocalConnectingId(null),
-  //     }
-  //   );
-  // };
+  const handleConnect = (repo: Repository) => {
+    setLocalConnectingId(repo.id);
+    connectRepo(
+      {
+        owner: repo.owner,
+        repo: repo.name,
+        githubId: repo.id,
+      },
+      {
+        onSettled: () => setLocalConnectingId(null),
+      }
+    );
+  };
   return (
     <div className="space-y-4">
       <div>
@@ -160,7 +158,7 @@ const RepositoryPage = () => {
                       <ExternalLink className="h-4 w-4" />
                     </a>
                   </Button>
-                  {/* <Button
+                  <Button
                     onClick={() => handleConnect(repo)}
                     disabled={localConnectingId === repo.id || repo.isConnected}
                     variant={repo.isConnected ? "outline" : "default"}
@@ -170,7 +168,7 @@ const RepositoryPage = () => {
                       : repo.isConnected
                       ? "Connected"
                       : "Connect"}
-                  </Button> */}
+                  </Button>
                 </div>
               </div>
             </CardHeader>
