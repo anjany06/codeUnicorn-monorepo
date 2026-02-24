@@ -4,7 +4,7 @@ import helmet from "helmet";
 import morgan from "morgan";
 import "dotenv/config";
 import cookieParser from "cookie-parser";
-// import { serve } from "inngest/express";
+import { serve } from "inngest/express";
 
 import { inngest } from "./lib/inngest";
 import { authRouter } from "./routes/auth.routes";
@@ -14,7 +14,7 @@ import { repositoryRouter } from "./routes/repository.routes";
 import { webhookRouter } from "./routes/webhook.routes"; 
 
 // Import Inngest functions
-// import { indexRepoFunction } from "./inngest/functions/index-repo";
+import { indexRepo } from "@codeunicorn/inngest";
 // import { prReviewFunction } from "./inngest/functions/pr-review";
 
 
@@ -44,13 +44,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // Inngest endpoint
-// app.use(
-//   "/api/inngest",
-//   serve({
-//     client: inngest,
-//     functions: [indexRepoFunction, prReviewFunction],
-//   })
-// );
+app.use(
+  "/api/inngest",
+  serve({
+    client: inngest,
+    functions: [indexRepo],
+  })
+);
 
 // API Routes
 app.use("/api/auth", authRouter);

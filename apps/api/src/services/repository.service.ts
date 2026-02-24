@@ -113,20 +113,20 @@ export async function connectRepository(
 
   // Trigger indexing via Inngest
 
-  // try{
-  // await inngest.send({
-  //   name: "repository.connected",
-  //   data: {
-  //     owner,
-  //     repo,
-  //     userId,
-  //     repositoryId: repository.id,
-  //   },
-  // });
-  // }
-  // catch (error) {
-  //   console.error("Failed to send inngest event:", error);
-  // }
+  try{
+  await inngest.send({
+    name: "repository.connected",
+    data: {
+      owner,
+      repo,
+      userId,
+      repositoryId: repository.id,
+    },
+  });
+  }
+  catch (error) {
+    console.error("Failed to send inngest event:", error);
+  }
   
   // Convert BigInt to string for JSON serialization
   return {

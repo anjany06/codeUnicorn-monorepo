@@ -1,234 +1,235 @@
-// import { Octokit } from "@octokit/rest";
-// import type { GitHubFile, PullRequestDiff } from "@codeunicorn/types";
+import { Octokit } from "@octokit/rest";
+import { GitHubFile, PullRequestDiff } from "../../types/src";
 
-// export function createOctokit(token: string) {
-//   return new Octokit({ auth: token });
-// }
 
-// export async function getRepoFileContents(
-//   token: string,
-//   owner: string,
-//   repo: string,
-//   path: string = ""
-// ): Promise<GitHubFile[]> {
-//   const octokit = createOctokit(token);
+export function createOctokit(token: string) {
+  return new Octokit({ auth: token });
+}
 
-//   try {
-//     const { data } = await octokit.rest.repos.getContent({
-//       owner,
-//       repo,
-//       path: path || "",
-//     });
+export async function getRepoFileContents(
+  token: string,
+  owner: string,
+  repo: string,
+  path: string = ""
+): Promise<GitHubFile[]> {
+  const octokit = createOctokit(token);
 
-//     if (!Array.isArray(data)) {
-//       // It's a file
-//       if (data.type === "file" && data.content) {
-//         return [
-//           {
-//             path: data.path,
-//             content: Buffer.from(data.content, "base64").toString("utf-8"),
-//           },
-//         ];
-//       }
-//       return [];
-//     }
+  try {
+    const { data } = await octokit.rest.repos.getContent({
+      owner,
+      repo,
+      path: path || "",
+    });
 
-//     // Directory case
-//     let files: GitHubFile[] = [];
+    if (!Array.isArray(data)) {
+      // It's a file
+      if (data.type === "file" && data.content) {
+        return [
+          {
+            path: data.path,
+            content: Buffer.from(data.content, "base64").toString("utf-8"),
+          },
+        ];
+      }
+      return [];
+    }
 
-//     for (const item of data) {
-//       // Skip non-code files
-//       if (
-//         item.path.match(
-//           /\.(png|jpg|jpeg|gif|svg|ico|pdf|zip|tar|gz|woff|woff2|ttf|eot|mp4|mp3|mov|avi)$/i
-//         )
-//       ) {
-//         continue;
-//       }
+    // Directory case
+    let files: GitHubFile[] = [];
 
-//       // Skip common directories
-//       if (
-//         item.path.match(
-//           /^(node_modules|\.git|\.next|dist|build|coverage|__pycache__|\.cache|vendor)$/i
-//         )
-//       ) {
-//         continue;
-//       }
+    for (const item of data) {
+      // Skip non-code files
+      if (
+        item.path.match(
+          /\.(png|jpg|jpeg|gif|svg|ico|pdf|zip|tar|gz|woff|woff2|ttf|eot|mp4|mp3|mov|avi)$/i
+        )
+      ) {
+        continue;
+      }
 
-//       if (item.type === "file") {
-//         try {
-//           const { data: fileData } = await octokit.rest.repos.getContent({
-//             owner,
-//             repo,
-//             path: item.path,
-//           });
+      // Skip common directories
+      if (
+        item.path.match(
+          /^(node_modules|\.git|\.next|dist|build|coverage|__pycache__|\.cache|vendor)$/i
+        )
+      ) {
+        continue;
+      }
 
-//           if (
-//             !Array.isArray(fileData) &&
-//             fileData.type === "file" &&
-//             fileData.content
-//           ) {
-//             files.push({
-//               path: item.path,
-//               content: Buffer.from(fileData.content, "base64").toString("utf-8"),
-//             });
-//           }
-//         } catch (error) {
-//           console.warn(`Skipping file ${item.path}:`, error);
-//           continue;
-//         }
-//       } else if (item.type === "dir") {
-//         try {
-//           const subFiles = await getRepoFileContents(token, owner, repo, item.path);
-//           files = files.concat(subFiles);
-//         } catch (error) {
-//           console.warn(`Skipping directory ${item.path}:`, error);
-//           continue;
-//         }
-//       }
-//     }
+      if (item.type === "file") {
+        try {
+          const { data: fileData } = await octokit.rest.repos.getContent({
+            owner,
+            repo,
+            path: item.path,
+          });
 
-//     return files;
-//   } catch (error: any) {
-//     console.error(`Error fetching content for ${owner}/${repo}/${path}:`, error.message);
-//     if (error.status === 404) {
-//       return [];
-//     }
-//     throw error;
-//   }
-// }
+          if (
+            !Array.isArray(fileData) &&
+            fileData.type === "file" &&
+            fileData.content
+          ) {
+            files.push({
+              path: item.path,
+              content: Buffer.from(fileData.content, "base64").toString("utf-8"),
+            });
+          }
+        } catch (error) {
+          console.warn(`Skipping file ${item.path}:`, error);
+          continue;
+        }
+      } else if (item.type === "dir") {
+        try {
+          const subFiles = await getRepoFileContents(token, owner, repo, item.path);
+          files = files.concat(subFiles);
+        } catch (error) {
+          console.warn(`Skipping directory ${item.path}:`, error);
+          continue;
+        }
+      }
+    }
 
-// export async function getPullRequestDiff(
-//   token: string,
-//   owner: string,
-//   repo: string,
-//   prNumber: number
-// ): Promise<PullRequestDiff> {
-//   const octokit = createOctokit(token);
+    return files;
+  } catch (error: any) {
+    console.error(`Error fetching content for ${owner}/${repo}/${path}:`, error.message);
+    if (error.status === 404) {
+      return [];
+    }
+    throw error;
+  }
+}
 
-//   const { data: pr } = await octokit.rest.pulls.get({
-//     owner,
-//     repo,
-//     pull_number: prNumber,
-//   });
+export async function getPullRequestDiff(
+  token: string,
+  owner: string,
+  repo: string,
+  prNumber: number
+): Promise<PullRequestDiff> {
+  const octokit = createOctokit(token);
 
-//   const { data: files } = await octokit.rest.pulls.listFiles({
-//     owner,
-//     repo,
-//     pull_number: prNumber,
-//   });
+  const { data: pr } = await octokit.rest.pulls.get({
+    owner,
+    repo,
+    pull_number: prNumber,
+  });
 
-//   return {
-//     title: pr.title,
-//     diff: files.map((f) => f.patch || "").join("\n"),
-//     files: files.map((f) => ({
-//       path: f.filename,
-//       content: f.patch || "",
-//     })),
-//   };
-// }
+  const { data: files } = await octokit.rest.pulls.listFiles({
+    owner,
+    repo,
+    pull_number: prNumber,
+  });
 
-// export async function fetchUserContribution(token: string, username: string) {
-//   const query = `
-//     query($username: String!) {
-//       user(login: $username) {
-//         contributionsCollection {
-//           contributionCalendar {
-//             totalContributions
-//             weeks {
-//               contributionDays {
-//                 date
-//                 contributionCount
-//               }
-//             }
-//           }
-//         }
-//       }
-//     }
-//   `;
+  return {
+    title: pr.title,
+    diff: files.map((f) => f.patch || "").join("\n"),
+    files: files.map((f) => ({
+      path: f.filename,
+      content: f.patch || "",
+    })),
+  };
+}
 
-//   const octokit = createOctokit(token);
+export async function fetchUserContribution(token: string, username: string) {
+  const query = `
+    query($username: String!) {
+      user(login: $username) {
+        contributionsCollection {
+          contributionCalendar {
+            totalContributions
+            weeks {
+              contributionDays {
+                date
+                contributionCount
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
 
-//   try {
-//     const response: any = await octokit.graphql(query, { username });
-//     return response.user.contributionsCollection.contributionCalendar;
-//   } catch (error) {
-//     console.error("Error fetching contribution data:", error);
-//     return null;
-//   }
-// }
+  const octokit = createOctokit(token);
 
-// export async function createWebhook(
-//   token: string,
-//   owner: string,
-//   repo: string,
-//   webhookUrl: string,
-//   secret: string
-// ) {
-//   const octokit = createOctokit(token);
+  try {
+    const response: any = await octokit.graphql(query, { username });
+    return response.user.contributionsCollection.contributionCalendar;
+  } catch (error) {
+    console.error("Error fetching contribution data:", error);
+    return null;
+  }
+}
 
-//   try {
-//     // Check if webhook already exists
-//     const { data: hooks } = await octokit.rest.repos.listWebhooks({
-//       owner,
-//       repo,
-//     });
+export async function createWebhook(
+  token: string,
+  owner: string,
+  repo: string,
+  webhookUrl: string,
+  secret: string
+) {
+  const octokit = createOctokit(token);
 
-//     const existingHook = hooks.find((hook) => hook.config.url === webhookUrl);
+  try {
+    // Check if webhook already exists
+    const { data: hooks } = await octokit.rest.repos.listWebhooks({
+      owner,
+      repo,
+    });
 
-//     if (existingHook) {
-//       console.log("Webhook already exists");
-//       return existingHook;
-//     }
+    const existingHook = hooks.find((hook) => hook.config.url === webhookUrl);
 
-//     // Create new webhook
-//     const { data } = await octokit.rest.repos.createWebhook({
-//       owner,
-//       repo,
-//       config: {
-//         url: webhookUrl,
-//         content_type: "json",
-//         secret: secret,
-//       },
-//       events: ["pull_request", "push"],
-//       active: true,
-//     });
+    if (existingHook) {
+      console.log("Webhook already exists");
+      return existingHook;
+    }
 
-//     return data;
-//   } catch (error) {
-//     console.error("Error creating webhook:", error);
-//     throw error;
-//   }
-// }
+    // Create new webhook
+    const { data } = await octokit.rest.repos.createWebhook({
+      owner,
+      repo,
+      config: {
+        url: webhookUrl,
+        content_type: "json",
+        secret: secret,
+      },
+      events: ["pull_request", "push"],
+      active: true,
+    });
 
-// export async function deleteWebhook(
-//   token: string,
-//   owner: string,
-//   repo: string,
-//   webhookUrl: string
-// ) {
-//   const octokit = createOctokit(token);
+    return data;
+  } catch (error) {
+    console.error("Error creating webhook:", error);
+    throw error;
+  }
+}
 
-//   try {
-//     const { data: hooks } = await octokit.rest.repos.listWebhooks({
-//       owner,
-//       repo,
-//     });
+export async function deleteWebhook(
+  token: string,
+  owner: string,
+  repo: string,
+  webhookUrl: string
+) {
+  const octokit = createOctokit(token);
 
-//     const hookToDelete = hooks.find((hook) => hook.config.url === webhookUrl);
+  try {
+    const { data: hooks } = await octokit.rest.repos.listWebhooks({
+      owner,
+      repo,
+    });
 
-//     if (hookToDelete) {
-//       await octokit.rest.repos.deleteWebhook({
-//         owner,
-//         repo,
-//         hook_id: hookToDelete.id,
-//       });
-//       return true;
-//     }
+    const hookToDelete = hooks.find((hook) => hook.config.url === webhookUrl);
 
-//     return false;
-//   } catch (error) {
-//     console.error("Error deleting webhook:", error);
-//     return false;
-//   }
-// }
+    if (hookToDelete) {
+      await octokit.rest.repos.deleteWebhook({
+        owner,
+        repo,
+        hook_id: hookToDelete.id,
+      });
+      return true;
+    }
+
+    return false;
+  } catch (error) {
+    console.error("Error deleting webhook:", error);
+    return false;
+  }
+}

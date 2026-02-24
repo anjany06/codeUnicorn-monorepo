@@ -1,36 +1,38 @@
-// import { prisma } from "@codeunicorn/database";
-// import { inngest } from "../client";
-// import { getRepoFileContents } from "@/module/github/lib/github";
-// import { indexCodebase } from "@/module/ai/lib/rag";
+import { prisma } from "@codeunicorn/database";
+import { inngest } from "../client";
+import { getRepoFileContents } from "../../../github/src";
+import { indexCodebase } from "../../../ai/src";
 
+export const indexRepo = inngest.createFunction(
+  { id: "index-the-repository" },
+  { event: "repository.connected" },
 
-// export const indexRepo = inngest.createFunction(
-//   {id: "index-the-repository"},
-//   {event: "repository.connected"},
+  async ({ event, step }) => {
+    const { owner, repo, userId } = event.data;
 
-//   async ({event, step})=>{
-//     const {owner, repo, userId} = event.data;
+    // STEP 1: Get file paths only (not content) to check count
+    const fileCount = await step.run("fetch-and-index-codebase", async () => {
+      const account = await prisma.account.findFirst({
+        where: {
+          userId: userId,
+          providerId: "github",
+        },
+      });
 
-//     //STEP 1 : fetch all the files from the repository
-//     const files = await step.run("fetch-all-the-files", async()=> {
+      if (!account?.accessToken) {
+        throw new Error("No Github access token found");
+      }
 
-//       const account = await prisma.account.findFirst({
-//         where:{
-//           userId: userId,
-//           providerId: "github"
-//         }
-//       })
-//       if(!account?.accessToken){
-//         throw new Error("No Github access token found")
-//       }
+      // Fetch files
+      const files = await getRepoFileContents(account.accessToken, owner, repo);
 
-//       return await getRepoFileContents(account.accessToken, owner, repo);
-//     })
+      // Index immediately — don't return large file contents as step output
+      await indexCodebase(`${owner}/${repo}`, files);
 
-//     await step.run("index-the-codebase", async()=>{
-//      await indexCodebase(`${owner}/${repo}`, files);
-//     })
+      // Only return a small summary, NOT the file contents
+      return files.length;
+    });
 
-//     return {success:true, indexedFiles: files.length};
-//   }
-// )
+    return { success: true, indexedFiles: fileCount };
+  }
+);
