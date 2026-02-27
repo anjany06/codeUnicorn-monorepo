@@ -10,5 +10,11 @@ repositoryRouter.get("/", authMiddleware, repositoryController.getRepositories);
 // POST /api/repositories/connect
 repositoryRouter.post("/connect", authMiddleware, repositoryController.connectRepository);
 
+// GET /api/repositories/connected
+repositoryRouter.get("/connected", authMiddleware, repositoryController.getConnectedRepositories);
+
+// DELETE /api/repositories/all
+repositoryRouter.delete("/all", authMiddleware, repositoryController.disconnectAllRepositories);
+
 // DELETE /api/repositories/:id
-// repositoryRouter.delete("/:id", authMiddleware, repositoryController.disconnectRepository);
+repositoryRouter.delete("/:id", authMiddleware, repositoryController.disconnectRepository);

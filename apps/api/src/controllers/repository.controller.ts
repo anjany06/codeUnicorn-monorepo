@@ -56,22 +56,68 @@ export async function connectRepository(req: AuthRequest, res: Response) {
   }
 }
 
-// export async function disconnectRepository(req: AuthRequest, res: Response) {
-//   try {
-//     const userId = req.user!.id;
-//     // const { id } = req.params;
+export async function getConnectedRepositories(req: AuthRequest, res: Response) {
+  try {
+    const userId = req.user!.id;
 
-//     await repositoryService.disconnectRepository(userId);
+    const repositories = await repositoryService.getConnectedRepositories(userId);
 
-//     res.json({
-//       success: true,
-//       message: "Repository disconnected successfully",
-//     });
-//   } catch (error: any) {
-//     console.error("Error disconnecting repository:", error);
-//     res.status(400).json({
-//       success: false,
-//       error: error.message || "Failed to disconnect repository",
-//     });
-//   }
-// }
+    res.json({
+      success: true,
+      data: repositories,
+    });
+  } catch (error) {
+    console.error("Error fetching connected repositories:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch connected repositories",
+    });
+  }
+}
+
+export async function disconnectRepository(req: AuthRequest, res: Response) {
+  try {
+    const userId = req.user!.id;
+    const id = req.params.id as string;
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing required parameter: id",
+      });
+    }
+
+    await repositoryService.disconnectRepository(userId, id);
+
+    res.json({
+      success: true,
+      message: "Repository disconnected successfully",
+    });
+  } catch (error: any) {
+    console.error("Error disconnecting repository:", error);
+    res.status(400).json({
+      success: false,
+      error: error.message || "Failed to disconnect repository",
+    });
+  }
+}
+
+export async function disconnectAllRepositories(req: AuthRequest, res: Response) {
+  try {
+    const userId = req.user!.id;
+
+    const result = await repositoryService.disconnectAllRepositories(userId);
+
+    res.json({
+      success: true,
+      message: "All repositories disconnected successfully",
+      count: result.count,
+    });
+  } catch (error: any) {
+    console.error("Error disconnecting all repositories:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message || "Failed to disconnect all repositories",
+    });
+  }
+}

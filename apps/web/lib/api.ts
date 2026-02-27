@@ -87,8 +87,19 @@ export async function connectRepository(
   });
 }
 
+export async function getConnectedRepositories() {
+  const res = await fetchApi<any[]>("/api/repositories/connected");
+  return res.data || [];
+}
+
 export async function disconnectRepository(id: string) {
   return fetchApi(`/api/repositories/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export async function disconnectAllRepositories() {
+  return fetchApi<{ count: number }>("/api/repositories/all", {
     method: "DELETE",
   });
 }

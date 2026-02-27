@@ -10,11 +10,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, ExternalLink, Trash, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  disconnectAllRepository,
-  disconnectRepository,
-  getConnectedRepositories,
-} from "../actions";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +23,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useState } from "react";
+import { disconnectAllRepositories, disconnectRepository, getConnectedRepositories } from "@/lib/api";
 
 export function RepositoryList() {
   const queryClient = useQueryClient();
@@ -56,13 +53,13 @@ export function RepositoryList() {
 
   const disconnectAllMutation = useMutation({
     mutationFn: async () => {
-      return await disconnectAllRepository();
+      return await disconnectAllRepositories();
     },
     onSuccess: (result) => {
       if (result?.success) {
         queryClient.invalidateQueries({ queryKey: ["connected-repositories"] });
         queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
-        toast.success(`Disconnected ${result.count} repositories`);
+        toast.success(`Disconnected ${result.data?.count ?? 0} repositories`);
         setDisconnectedAllOpen(false);
       } else {
         toast.error(result?.error || "Failed to disconnect repositories");

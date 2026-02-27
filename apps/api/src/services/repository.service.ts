@@ -137,6 +137,59 @@ export async function connectRepository(
   };
 }
 
+export async function getConnectedRepositories(userId: string) {
+  const repositories = await prisma.repository.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return repositories.map((repo) => ({
+    ...repo,
+    githubId: repo.githubId.toString(),
+    createdAt: repo.createdAt.toISOString(),
+    updatedAt: repo.updatedAt.toISOString(),
+  }));
+}
+
+export async function deleteWebhook(
+  userId: string,
+  owner: string,
+  repo: string
+): Promise<boolean> {
+  const token = await getGithubToken(userId);
+
+  if (!token) {
+    console.error("GitHub token not found for webhook deletion");
+    return false;
+  }
+
+  const octokit = new Octokit({ auth: token });
+  const webhookUrl = `${process.env.API_NROK_URL}/api/webhooks/github`;
+
+  try {
+    const { data: hooks } = await octokit.rest.repos.listWebhooks({
+      owner,
+      repo,
+    });
+
+    const hookToDelete = hooks.find((hook) => hook.config.url === webhookUrl);
+
+    if (hookToDelete) {
+      await octokit.rest.repos.deleteWebhook({
+        owner,
+        repo,
+        hook_id: hookToDelete.id,
+      });
+      return true;
+    }
+
+    return false;
+  } catch (error) {
+    console.error("Error deleting webhook:", error);
+    return false;
+  }
+}
+
 export async function disconnectRepository(userId: string, repositoryId: string) {
   const repository = await prisma.repository.findFirst({
     where: { id: repositoryId, userId },
@@ -146,10 +199,31 @@ export async function disconnectRepository(userId: string, repositoryId: string)
     throw new Error("Repository not found");
   }
 
+  // Delete webhook from GitHub
+  await deleteWebhook(userId, repository.owner, repository.name);
+
   // Delete from database (this will cascade delete reviews)
   await prisma.repository.delete({
     where: { id: repositoryId },
   });
 
   return { success: true };
+}
+
+export async function disconnectAllRepositories(userId: string) {
+  const repositories = await prisma.repository.findMany({
+    where: { userId },
+  });
+
+  // Delete all webhooks in parallel
+  await Promise.all(
+    repositories.map((repo) => deleteWebhook(userId, repo.owner, repo.name))
+  );
+
+  // Delete all repositories from database
+  const result = await prisma.repository.deleteMany({
+    where: { userId },
+  });
+
+  return { success: true, count: result.count };
 }
