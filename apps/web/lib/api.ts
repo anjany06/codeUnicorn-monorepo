@@ -103,3 +103,9 @@ export async function disconnectAllRepositories() {
     method: "DELETE",
   });
 }
+
+// Reviews API
+export async function getReviews() {
+  const res = await fetchApi<any[]>("/api/reviews");
+  return res.data || [];
+}

@@ -11,6 +11,7 @@ import { authRouter } from "./routes/auth.routes";
 import { userRouter } from "./routes/user.routes";
 import { dashboardRouter } from "./routes/dashboard.routes";
 import { repositoryRouter } from "./routes/repository.routes";
+import { reviewRouter } from "./routes/review.routes";
 import { webhookRouter } from "./routes/webhook.routes"; 
 
 // Import Inngest functions
@@ -56,6 +57,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/users", userRouter);
 app.use("/api/dashboard", dashboardRouter);
 app.use("/api/repositories", repositoryRouter);
+app.use("/api/reviews", reviewRouter);
 
 
 // Health check
