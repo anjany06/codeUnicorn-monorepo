@@ -72,6 +72,7 @@ export interface GitHubFile {
 
 export interface PullRequestDiff {
   title: string;
+  description: string | null;
   diff: string;
   files: GitHubFile[];
 }

@@ -6,8 +6,8 @@
     "build": "turbo build",
     "lint": "turbo lint",
     "db:push": "pnpm --filter @codeunicorn/database db:push",
-    "db:generate": "pnpm --filter @codeunicorn/database generate",
-    "db:studio": "pnpm --filter @codeunicorn/database studio"
+    "db:generate": "pnpm --filter @codeunicorn/database db:generate",
+    "db:studio": "pnpm --filter @codeunicorn/database db:studio"
   },
   "devDependencies": {
     "turbo": "^2.3.0",

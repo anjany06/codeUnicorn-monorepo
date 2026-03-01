@@ -7,11 +7,13 @@
     "build": "tsc"
   },
   "dependencies": {
-    "inngest": "^3.0.0",
+     "@ai-sdk/google": "^3.0.10",
+    "@codeunicorn/ai": "workspace:*",
     "@codeunicorn/database": "workspace:*",
     "@codeunicorn/github": "workspace:*",
-    "@codeunicorn/ai": "workspace:*",
-    "@codeunicorn/types": "workspace:*"
+    "@codeunicorn/types": "workspace:*",
+    "ai": "^6.0.42",
+    "inngest": "^3.0.0"
   },
   "devDependencies": {
     "typescript": "^5.7.0"

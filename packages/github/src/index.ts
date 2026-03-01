@@ -121,6 +121,7 @@ export async function getPullRequestDiff(
 
   return {
     title: pr.title,
+    description: pr.body ?? null,
     diff: files.map((f) => f.patch || "").join("\n"),
     files: files.map((f) => ({
       path: f.filename,
@@ -200,6 +201,22 @@ export async function createWebhook(
     console.error("Error creating webhook:", error);
     throw error;
   }
+}
+
+export async function postReviewComment(
+  token: string,
+  owner: string,
+  repo: string,
+  prNumber: number,
+  review: string
+) {
+  const octokit = createOctokit(token);
+  await octokit.rest.issues.createComment({
+    owner,
+    repo,
+    issue_number: prNumber,
+    body: `## PR Review through AI \n\n${review}\n\n---\n*Powered by CodeUnicorn*`,
+  });
 }
 
 export async function deleteWebhook(

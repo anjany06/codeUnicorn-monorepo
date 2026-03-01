@@ -9,7 +9,6 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "@ai-sdk/google": "^3.0.10",
     "@codeunicorn/ai": "workspace:*",
     "@codeunicorn/database": "workspace:*",
     "@codeunicorn/github": "workspace:*",

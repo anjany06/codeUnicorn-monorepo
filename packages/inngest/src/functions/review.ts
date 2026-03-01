@@ -1,103 +1,102 @@
-// import { inngest } from "../client";
-// import { getPullRequestDiff, postReviewComment } from "@/module/github/lib/github";
-// import { retrieveContext } from "@/module/ai/lib/rag";
-// import { generateText } from "ai";
-// import { google } from "@ai-sdk/google";
-// import { prisma } from "@codeunicorn/database";
+import { inngest } from "../client";
+import { getPullRequestDiff, postReviewComment } from "@codeunicorn/github";
+import { retrieveContext } from "@codeunicorn/ai";
+import { generateText } from "ai";
+import { google } from "@ai-sdk/google";
+import { prisma } from "@codeunicorn/database";
 
-// export const generateReview = inngest.createFunction(
-//   {id:"generate-review", concurrency:5},
-//   {event: "pr.review.requested"},
 
-//   async ({event, step})=>{
-//     const {owner, repo, prNumber, userId} = event.data;
 
-//     const { diff, title, description, token } = await step.run("fetch-pr-data", async()=>{
+export const generateReview = inngest.createFunction(
+  { id: "generate-review", concurrency: 5 },
+  { event: "pr.review.requested" },
 
-//       const account = await prisma.account.findFirst({
-//         where:{
-//           userId,
-//           providerId: "github"
-//         }
-//       })
+  async ({ event, step }) => {
+    const { owner, repo, prNumber, userId } = event.data;
 
-//       if(!account?.accessToken){
-//         throw new Error("No Github access token found")
-//       }
+    const { diff, title, description, token } = await step.run("fetch-pr-data", async () => {
+      const account = await prisma.account.findFirst({
+        where: {
+          userId,
+          providerId: "github",
+        },
+      });
 
-//       const data = await getPullRequestDiff(account.accessToken, owner, repo, prNumber);
+      if (!account?.accessToken) {
+        throw new Error("No Github access token found");
+      }
 
-//       return {
-//         ...data,
-//         token: account.accessToken,
-//       }
-//     })
+      const data = await getPullRequestDiff(account.accessToken, owner, repo, prNumber);
 
-//     const context = await step.run("retrieve-context", async()=>{
-//       const query = `${title}\n${description}`;
+      return {
+        ...data,
+        token: account.accessToken,
+      };
+    });
 
-//       return await retrieveContext(query, `${owner}/${repo}`);
-//     })
+    const context = await step.run("retrieve-context", async () => {
+      const query = `${title}\n${description}`;
+      return await retrieveContext(query, `${owner}/${repo}`);
+    });
 
-//     const review = await step.run("generate-review-text", async()=>{
-//       const prompt = `You are an expert code reviewer. Analyze the following pull request and provide a detailed, constructive code review.
+    const review = await step.run("generate-review-text", async () => {
+      const prompt = `You are an expert code reviewer. Analyze the following pull request and provide a detailed, constructive code review.
 
-//        PR Title: ${title}
-//        PR Description: ${description || "No description provided"}
+       PR Title: ${title}
+       PR Description: ${description || "No description provided"}
 
-//       Context from Codebase:
-//         ${context.join("\n\n")}
+      Context from Codebase:
+        ${context.join("\n\n")}
 
-//       Code Changes:
-//       \`\`\`diff
-//       ${diff}
-//        \`\`\`
+      Code Changes:
+      \`\`\`diff
+      ${diff}
+       \`\`\`
 
-//     Please provide:
-//       1. **Walkthrough**: A file-by-file explanation of the changes.
-//       2. **Sequence Diagram**: A Mermaid JS sequence diagram visualizing the flow of the changes (if applicable). Use \`\`\`mermaid ... \`\`\` block. **IMPORTANT**: Ensure the Mermaid syntax is valid. Do not use special characters (like quotes, braces, parentheses) inside Note text or labels as it breaks rendering. Keep the diagram simple.
-//       3. **Summary**: Brief overview.
-//       4. **Strengths**: What's done well.
-//       5. **Issues**: Bugs, security concerns, code smells.
-//       6. **Suggestions**: Specific code improvements.
-  
+    Please provide:
+      1. **Walkthrough**: A file-by-file explanation of the changes.
+      2. **Sequence Diagram**: A Mermaid JS sequence diagram visualizing the flow of the changes (if applicable). Use \`\`\`mermaid ... \`\`\` block. **IMPORTANT**: Ensure the Mermaid syntax is valid. Do not use special characters (like quotes, braces, parentheses) inside Note text or labels as it breaks rendering. Keep the diagram simple.
+      3. **Summary**: Brief overview.
+      4. **Strengths**: What's done well.
+      5. **Issues**: Bugs, security concerns, code smells.
+      6. **Suggestions**: Specific code improvements.
 
-//       Format your response in markdown.`;
+      Format your response in markdown.`;
 
-//       const {text} = await generateText({
-//         model: google("gemini-2.5-flash"),
-//         prompt: prompt,
-//       })
+      const { text } = await generateText({
+        model: google("gemini-2.5-flash"),
+        prompt: prompt,
+      });
 
-//       return text;
-//     })
+      return text;
+    });
 
-//     await step.run("post-comments", async ()=>{
-//       await postReviewComment(token, owner, repo, prNumber, review);
-//     })
+    await step.run("post-comments", async () => {
+      await postReviewComment(token, owner, repo, prNumber, review);
+    });
 
-//     await step.run("save-review",async()=>{
-//       const repository = await prisma.repository.findFirst({
-//         where:{
-//           owner,
-//           name: repo,
-//         }
-//       });
+    await step.run("save-review", async () => {
+      const repository = await prisma.repository.findFirst({
+        where: {
+          owner,
+          name: repo,
+        },
+      });
 
-//       if(repository){
-//         await prisma.review.create({
-//           data:{
-//             repositoryId: repository.id,
-//             prNumber,
-//             prTitle: title,
-//             prUrl: `https://github.com/${owner}/${repo}/pull/${prNumber}`,
-//             review,
-//             status: "completed",
-//           },
-//         });
-//       }
-//     })
+      if (repository) {
+        await prisma.review.create({
+          data: {
+            repositoryId: repository.id,
+            prNumber,
+            prTitle: title,
+            prUrl: `https://github.com/${owner}/${repo}/pull/${prNumber}`,
+            review,
+            status: "completed",
+          },
+        });
+      }
+    });
 
-//     return {success:true};
-//   }
-// )
+    return { success: true };
+  }
+);

@@ -14,8 +14,7 @@ import { repositoryRouter } from "./routes/repository.routes";
 import { webhookRouter } from "./routes/webhook.routes"; 
 
 // Import Inngest functions
-import { indexRepo } from "@codeunicorn/inngest";
-// import { prReviewFunction } from "./inngest/functions/pr-review";
+import { indexRepo, generateReview } from "@codeunicorn/inngest";
 
 
 const app = express();
@@ -48,7 +47,7 @@ app.use(
   "/api/inngest",
   serve({
     client: inngest,
-    functions: [indexRepo],
+    functions: [indexRepo, generateReview],
   })
 );
 

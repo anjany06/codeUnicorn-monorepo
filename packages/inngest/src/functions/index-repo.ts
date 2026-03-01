@@ -27,10 +27,14 @@ export const indexRepo = inngest.createFunction(
       const files = await getRepoFileContents(account.accessToken, owner, repo);
 
       // Index immediately — don't return large file contents as step output
-      await indexCodebase(`${owner}/${repo}`, files);
+      const indexedCount = await indexCodebase(`${owner}/${repo}`, files);
+
+      if (indexedCount === 0) {
+        throw new Error(`Indexing failed: 0 out of ${files.length} files were indexed`);
+      }
 
       // Only return a small summary, NOT the file contents
-      return files.length;
+      return indexedCount;
     });
 
     return { success: true, indexedFiles: fileCount };

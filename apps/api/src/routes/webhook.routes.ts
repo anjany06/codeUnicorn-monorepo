@@ -1,7 +1,8 @@
 import { Router , type Router as RouterType } from "express";
 import crypto from "crypto";
 import { prisma } from "@codeunicorn/database";
-// import { inngest } from "@codeunicorn/inngest";
+import { inngest } from "@codeunicorn/inngest";
+
 
 export const webhookRouter: RouterType = Router();
 
@@ -36,42 +37,43 @@ webhookRouter.post("/github", async (req, res) => {
       return res.json({ msg: "pong" });
     }
 
-    const body = req.body;
+    // req.body is a raw Buffer (from express.raw middleware), so parse it
+    const body = JSON.parse(req.body.toString());
     
 
     // Handle pull_request event
-    // if (event === "pull_request") {
-    //   const action = body.action;
-    //   const repo = body.repository?.full_name;
-    //   const prNumber = body.pull_request?.number;
+    if (event === "pull_request") {
+      const action = body.action;
+      const repo = body.repository?.full_name;
+      const prNumber = body.pull_request?.number;
 
-    //   if (!repo || !prNumber) {
-    //     return res.status(400).json({ error: "Missing data" });
-    //   }
+      if (!repo || !prNumber) {
+        return res.status(400).json({ error: "Missing data" });
+      }
 
-    //   const [owner, repoName] = repo.split("/");
+      const [owner, repoName] = repo.split("/");
 
-    //   console.log(`PR Event: ${action} - ${repo}#${prNumber}`);
+      console.log(`PR Event: ${action} - ${repo}#${prNumber}`);
 
-    //   if (action === "opened" || action === "synchronize") {
-    //     // Find repository
-    //     const repository = await prisma.repository.findFirst({
-    //       where: { owner, name: repoName },
-    //     });
+      if (action === "opened" || action === "synchronize") {
+        // Find repository
+        const repository = await prisma.repository.findFirst({
+          where: { owner, name: repoName },
+        });
 
-    //     if (repository) {
-    //       await inngest.send({
-    //         name: "pr.review.requested",
-    //         data: {
-    //           owner,
-    //           repo: repoName,
-    //           prNumber,
-    //           userId: repository.userId,
-    //         },
-    //       });
-    //     }
-    //   }
-    // }
+        if (repository) {
+          await inngest.send({
+            name: "pr.review.requested",
+            data: {
+              owner,
+              repo: repoName,
+              prNumber,
+              userId: repository.userId,
+            },
+          });
+        }
+      }
+    }
 
     res.json({ success: true, event });
   } catch (error) {

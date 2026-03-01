@@ -1,15 +1,21 @@
+
+
+import {embed} from "ai";
+import {createGoogleGenerativeAI, google}from "@ai-sdk/google";
 import { pineconeIndex } from "./pinecone";
 
-import {embed, type EmbeddingModel} from "ai";
-import {google}from "@ai-sdk/google";
 
 
-export async function generateEmbedding(text:string){
+export async function generateEmbedding(text: string) {
   const { embedding } = await embed({
-    model:google.textEmbeddingModel("text-embedding-004") as unknown as EmbeddingModel<string>,
-    value:text,
-  })
-
+    model: google.textEmbeddingModel("gemini-embedding-001"),
+    value: text,
+    providerOptions: {
+      google: {
+        outputDimensionality: 768, // matching the existing Pinecone index dimension
+      },
+    },
+  });
   return embedding;
 }
 
@@ -45,6 +51,7 @@ export async function indexCodebase(repoId:string, files:{path:string, content:s
   }
 
   console.log("Indexing completed. Total vectors indexed:", vectors.length);
+  return vectors.length;
 }
 
 export async function retrieveContext(query:string, repoId:string, topK:number=5){
