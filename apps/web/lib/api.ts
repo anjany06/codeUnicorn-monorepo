@@ -109,3 +109,46 @@ export async function getReviews() {
   const res = await fetchApi<any[]>("/api/reviews");
   return res.data || [];
 }
+
+// Subscription API
+export interface SubscriptionData {
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    subscriptionTier: string;
+    subscriptionStatus: string | null;
+    polarCustomerId: string | null;
+    polarSubscriptionId: string | null;
+  } | null;
+  limits: {
+    tier: "FREE" | "PRO";
+    repositories: {
+      current: number;
+      limit: number | null;
+      canAdd: boolean;
+    };
+    reviews: {
+      [repositoryId: string]: {
+        current: number;
+        limit: number | null;
+        canAdd: boolean;
+      };
+    };
+  } | null;
+}
+
+export async function getSubscriptionData(): Promise<SubscriptionData> {
+  const res = await fetchApi<SubscriptionData>("/api/subscription");
+  return res.data || { user: null, limits: null };
+}
+
+export async function syncSubscriptionStatus() {
+  const res = await fetchApi<{ success: boolean; status?: string; message?: string; error?: string }>(
+    "/api/subscription/sync",
+    { method: "POST" }
+  );
+  // Use the outer wrapper success (HTTP-level) — the controller always returns
+  // { success: true, data: result } on 200, so res.success is the reliable flag.
+  return { success: res.success, ...(res.data || {}) };
+}

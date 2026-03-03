@@ -1,6 +1,11 @@
 import { prisma } from "@codeunicorn/database";
 import { Octokit } from "@octokit/rest";
 import { inngest } from "../lib/inngest";
+import {
+  canConnectRepository,
+  incrementRepositoryCount,
+  decrementRepositoryCount,
+} from "./subscription.service";
 
 export async function getGithubToken(userId: string): Promise<string | null> {
   const account = await prisma.account.findFirst({
@@ -53,6 +58,12 @@ export async function connectRepository(
   repo: string,
   githubId: number
 ) {
+  // Check subscription limits
+  const canConnect = await canConnectRepository(userId);
+  if (!canConnect) {
+    throw new Error("Repository limit reached. Upgrade to Pro for unlimited repositories.");
+  }
+
   // Check if already connected
   const existing = await prisma.repository.findFirst({
     where: { githubId: BigInt(githubId) },
@@ -111,20 +122,21 @@ export async function connectRepository(
     },
   });
 
-  // Trigger indexing via Inngest
+  // Track usage
+  await incrementRepositoryCount(userId);
 
-  try{
-  await inngest.send({
-    name: "repository.connected",
-    data: {
-      owner,
-      repo,
-      userId,
-      repositoryId: repository.id,
-    },
-  });
-  }
-  catch (error) {
+  // Trigger indexing via Inngest
+  try {
+    await inngest.send({
+      name: "repository.connected",
+      data: {
+        owner,
+        repo,
+        userId,
+        repositoryId: repository.id,
+      },
+    });
+  } catch (error) {
     console.error("Failed to send inngest event:", error);
   }
   
@@ -207,6 +219,9 @@ export async function disconnectRepository(userId: string, repositoryId: string)
     where: { id: repositoryId },
   });
 
+  // Track usage
+  await decrementRepositoryCount(userId);
+
   return { success: true };
 }
 
@@ -223,6 +238,13 @@ export async function disconnectAllRepositories(userId: string) {
   // Delete all repositories from database
   const result = await prisma.repository.deleteMany({
     where: { userId },
+  });
+
+  // Reset repository count to 0
+  await prisma.userUsage.upsert({
+    where: { userId },
+    create: { userId, repositoryCount: 0, reviewCounts: {} },
+    update: { repositoryCount: 0 },
   });
 
   return { success: true, count: result.count };

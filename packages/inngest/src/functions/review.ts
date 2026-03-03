@@ -94,6 +94,28 @@ export const generateReview = inngest.createFunction(
             status: "completed",
           },
         });
+
+        // Increment review count for subscription tracking
+        const usage = await prisma.userUsage.findUnique({
+          where: { userId },
+        });
+
+        if (usage) {
+          const reviewCounts = (usage.reviewCounts as Record<string, number>) || {};
+          reviewCounts[repository.id] = (reviewCounts[repository.id] || 0) + 1;
+          await prisma.userUsage.update({
+            where: { userId },
+            data: { reviewCounts },
+          });
+        } else {
+          await prisma.userUsage.create({
+            data: {
+              userId,
+              repositoryCount: 0,
+              reviewCounts: { [repository.id]: 1 },
+            },
+          });
+        }
       }
     });
 

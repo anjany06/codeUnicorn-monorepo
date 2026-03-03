@@ -17,12 +17,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import {
-  getSubscriptionData,
-  syncSubscriptionStatus,
-} from "@/module/payment/action";
+import { getSubscriptionData, syncSubscriptionStatus } from "@/lib/api";
 import { Spinner } from "@/components/ui/spinner";
-import { set } from "zod";
 
 const PLAN_FEATURES = {
   free: [
@@ -60,9 +56,16 @@ export default function SubscriptionPage() {
     if (success === "true") {
       const sync = async () => {
         try {
-          await syncSubscriptionStatus();
+          const result = await syncSubscriptionStatus();
+          if (result.success) {
+            toast.success("Subscription activated! Welcome to Pro.");
+          }
+          await refetch();
         } catch (error) {
           console.error("Sync Error:", error);
+          toast.error(
+            'Could not verify subscription. Please click "Sync Status" manually.',
+          );
         }
       };
       sync();
@@ -128,14 +131,18 @@ export default function SubscriptionPage() {
     try {
       setSyncLoading(true);
       const result = await syncSubscriptionStatus();
+      // Always refetch so the UI reflects the latest DB state
+      await refetch();
       if (result.success) {
         toast.success("Subscription status synced successfully");
-        refetch();
       } else {
-        toast.error("Failed to sync subscription status. Please try again.");
+        toast.error(
+          "Sync failed: " + (result.message || result.error || "Unknown error"),
+        );
       }
     } catch (error) {
       console.error("Sync Error:", error);
+      toast.error("Failed to reach the server. Please try again.");
     } finally {
       setSyncLoading(false);
     }
@@ -143,9 +150,24 @@ export default function SubscriptionPage() {
   const handleUpgrade = async () => {
     try {
       setCheckoutLoading(true);
+
+      // Temporarily intercept to see raw error
+      const origFetch = window.fetch;
+      window.fetch = async (...args) => {
+        const res = await origFetch(...args);
+        if (!res.ok && String(args[0]).includes("checkout")) {
+          const clone = res.clone();
+          const body = await clone.text();
+          console.error("Checkout raw error:", res.status, body);
+        }
+        return res;
+      };
+
       await checkout({
         slug: "codeUnicorn-new-dev",
       });
+
+      window.fetch = origFetch; // restore
     } catch (error) {
       console.error("Checkout Error:", error);
       setCheckoutLoading(false);
@@ -241,7 +263,7 @@ export default function SubscriptionPage() {
                             (data.limits.repositories.current /
                               data.limits.repositories.limit) *
                               100,
-                            100
+                            100,
                           )} %`
                         : "0%",
                     }}

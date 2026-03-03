@@ -2,6 +2,7 @@ import { Router , type Router as RouterType } from "express";
 import crypto from "crypto";
 import { prisma } from "@codeunicorn/database";
 import { inngest } from "@codeunicorn/inngest";
+import { canCreateReview } from "../services/subscription.service";
 
 
 export const webhookRouter: RouterType = Router();
@@ -62,6 +63,13 @@ webhookRouter.post("/github", async (req, res) => {
         });
 
         if (repository) {
+          // Check if user can create a review (subscription limits)
+          const allowed = await canCreateReview(repository.userId, repository.id);
+          if (!allowed) {
+            console.log(`Review limit reached for user ${repository.userId} on repo ${repository.id}`);
+            return res.json({ success: true, skipped: true, reason: "Review limit reached" });
+          }
+
           await inngest.send({
             name: "pr.review.requested",
             data: {
@@ -69,6 +77,7 @@ webhookRouter.post("/github", async (req, res) => {
               repo: repoName,
               prNumber,
               userId: repository.userId,
+              repositoryId: repository.id,
             },
           });
         }
