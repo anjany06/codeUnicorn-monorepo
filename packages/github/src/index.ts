@@ -1,5 +1,5 @@
 import { Octokit } from "@octokit/rest";
-import { GitHubFile, PullRequestDiff } from "../../types/src";
+import { GitHubFile, PullRequestDiff, PullRequestFile } from "../../types/src";
 
 
 export function createOctokit(token: string) {
@@ -122,11 +122,17 @@ export async function getPullRequestDiff(
   return {
     title: pr.title,
     description: pr.body ?? null,
-    diff: files.map((f) => f.patch || "").join("\n"),
-    files: files.map((f) => ({
-      path: f.filename,
-      content: f.patch || "",
+    diff: files.map((f) => `--- a/${f.filename}\n+++ b/${f.filename}\n${f.patch || ""}`).join("\n"),
+    files: files.map((f): PullRequestFile => ({
+      filename: f.filename,
+      status: f.status as PullRequestFile["status"],
+      patch: f.patch || "",
+      sha: f.sha,
+      additions: f.additions,
+      deletions: f.deletions,
+      changes: f.changes,
     })),
+    headSha: pr.head.sha,
   };
 }
 
@@ -215,8 +221,211 @@ export async function postReviewComment(
     owner,
     repo,
     issue_number: prNumber,
-    body: `## PR Review through AI \n\n${review}\n\n---\n*Powered by CodeUnicorn*`,
+    body: `## 🦄 CodeUnicorn AI Review\n\n${review}\n\n---\n*Powered by CodeUnicorn*`,
   });
+}
+
+// ─── Feature 1: Line-Level PR Comments ──────────────────────────────────────
+
+/**
+ * Parse unified diff hunk headers to map diff positions to file line numbers.
+ * Returns a map: diffPosition (1-based within patch) → { oldLine, newLine }
+ */
+export function parseDiffPositions(patch: string): Map<number, { side: "LEFT" | "RIGHT"; line: number }> {
+  const positionMap = new Map<number, { side: "LEFT" | "RIGHT"; line: number }>();
+  if (!patch) return positionMap;
+
+  const lines = patch.split("\n");
+  let diffPosition = 0;
+  let newLine = 0;
+  let oldLine = 0;
+
+  for (const line of lines) {
+    const hunkMatch = line.match(/^@@\s+-(\d+)(?:,\d+)?\s+\+(\d+)(?:,\d+)?\s+@@/);
+    if (hunkMatch) {
+      oldLine = parseInt(hunkMatch[1], 10);
+      newLine = parseInt(hunkMatch[2], 10);
+      diffPosition++;
+      continue;
+    }
+
+    if (diffPosition === 0) continue; // skip lines before first hunk
+
+    diffPosition++;
+
+    if (line.startsWith("+")) {
+      positionMap.set(diffPosition, { side: "RIGHT", line: newLine });
+      newLine++;
+    } else if (line.startsWith("-")) {
+      positionMap.set(diffPosition, { side: "LEFT", line: oldLine });
+      oldLine++;
+    } else {
+      // Context line
+      positionMap.set(diffPosition, { side: "RIGHT", line: newLine });
+      newLine++;
+      oldLine++;
+    }
+  }
+
+  return positionMap;
+}
+
+/**
+ * Find the diff position for a given file line number in a patch.
+ * GitHub's createReview API needs the diff position (1-based position within the patch).
+ */
+export function findDiffPosition(patch: string, targetLine: number): number | null {
+  const positions = parseDiffPositions(patch);
+  for (const [pos, info] of positions) {
+    if (info.side === "RIGHT" && info.line === targetLine) {
+      return pos;
+    }
+  }
+  // If exact line not found, try to find closest
+  return null;
+}
+
+/**
+ * Post line-level review comments on a PR using GitHub's pull request review API.
+ * This creates inline annotations on specific lines of the diff.
+ */
+export async function postLineReviewComments(
+  token: string,
+  owner: string,
+  repo: string,
+  prNumber: number,
+  headSha: string,
+  comments: Array<{
+    path: string;
+    line: number;
+    body: string;
+    suggestion?: string;
+  }>,
+  patchMap: Map<string, string> // filename → patch
+) {
+  const octokit = createOctokit(token);
+
+  // Build review comments with diff positions
+  const reviewComments: Array<{
+    path: string;
+    position?: number;
+    line?: number;
+    side?: string;
+    body: string;
+  }> = [];
+
+  for (const comment of comments) {
+    const patch = patchMap.get(comment.path);
+    if (!patch) continue;
+
+    const position = findDiffPosition(patch, comment.line);
+    if (!position) continue;
+
+    let body = comment.body;
+    if (comment.suggestion) {
+      body += `\n\n\`\`\`suggestion\n${comment.suggestion}\n\`\`\``;
+    }
+
+    reviewComments.push({
+      path: comment.path,
+      position,
+      body,
+    });
+  }
+
+  if (reviewComments.length === 0) return;
+
+  try {
+    await octokit.rest.pulls.createReview({
+      owner,
+      repo,
+      pull_number: prNumber,
+      commit_id: headSha,
+      event: "COMMENT",
+      comments: reviewComments,
+    });
+  } catch (error) {
+    console.error("Error posting line-level review comments:", error);
+    // Fallback: try posting comments individually if batch fails
+    for (const comment of reviewComments) {
+      try {
+        await octokit.rest.pulls.createReviewComment({
+          owner,
+          repo,
+          pull_number: prNumber,
+          commit_id: headSha,
+          path: comment.path,
+          position: comment.position,
+          body: comment.body,
+        });
+      } catch (innerError) {
+        console.error(`Failed to post comment on ${comment.path}:`, innerError);
+      }
+    }
+  }
+}
+
+// ─── Feature 3: Fetch changed files from a push for delta re-indexing ───────
+
+export async function getChangedFilesFromCommits(
+  token: string,
+  owner: string,
+  repo: string,
+  commits: Array<{ added: string[]; modified: string[]; removed: string[] }>
+): Promise<{ changedPaths: string[]; removedPaths: string[] }> {
+  const changedSet = new Set<string>();
+  const removedSet = new Set<string>();
+
+  for (const commit of commits) {
+    for (const path of commit.added || []) changedSet.add(path);
+    for (const path of commit.modified || []) changedSet.add(path);
+    for (const path of commit.removed || []) removedSet.add(path);
+  }
+
+  // If a file was removed then re-added in later commits, don't treat it as removed
+  for (const path of changedSet) {
+    removedSet.delete(path);
+  }
+
+  return {
+    changedPaths: Array.from(changedSet),
+    removedPaths: Array.from(removedSet),
+  };
+}
+
+export async function getFileContent(
+  token: string,
+  owner: string,
+  repo: string,
+  path: string,
+  ref?: string
+): Promise<string | null> {
+  const octokit = createOctokit(token);
+  try {
+    const { data } = await octokit.rest.repos.getContent({
+      owner,
+      repo,
+      path,
+      ...(ref ? { ref } : {}),
+    });
+    if (!Array.isArray(data) && data.type === "file" && data.content) {
+      return Buffer.from(data.content, "base64").toString("utf-8");
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export async function getHeadSha(
+  token: string,
+  owner: string,
+  repo: string,
+  branch: string = "main"
+): Promise<string> {
+  const octokit = createOctokit(token);
+  const { data } = await octokit.rest.repos.getBranch({ owner, repo, branch });
+  return data.commit.sha;
 }
 
 export async function deleteWebhook(

@@ -8,8 +8,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, ExternalLink, Trash, Trash2 } from "lucide-react";
+import {
+  AlertTriangle,
+  ExternalLink,
+  Settings2,
+  Trash,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
+import Link from "next/link";
 
 import {
   AlertDialog,
@@ -23,7 +30,11 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useState } from "react";
-import { disconnectAllRepositories, disconnectRepository, getConnectedRepositories } from "@/lib/api";
+import {
+  disconnectAllRepositories,
+  disconnectRepository,
+  getConnectedRepositories,
+} from "@/lib/api";
 
 export function RepositoryList() {
   const queryClient = useQueryClient();
@@ -167,41 +178,50 @@ export function RepositoryList() {
                   </div>
                 </div>
 
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="ml-4 text-destructive hover:text-destructive/10 hover:bg-destructive/10"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        Disconnect Repository?
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This will disconnect <strong>{repo.fullName}</strong>{" "}
-                        and delete all associated AI reviews. This action cannot
-                        be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => disconnectMutation.mutate(repo.id)}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        disabled={disconnectMutation.isPending}
+                <div className="flex items-center gap-2 ml-4">
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href={`/dashboard/repository/config/${repo.id}`}>
+                      <Settings2 className="w-4 h-4 mr-1" />
+                      Configure
+                    </Link>
+                  </Button>
+
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="ml-4 text-destructive hover:text-destructive/10 hover:bg-destructive/10"
                       >
-                        {disconnectMutation.isPending
-                          ? "Disconnecting..."
-                          : "Disconnect"}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          Disconnect Repository?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will disconnect <strong>{repo.fullName}</strong>{" "}
+                          and delete all associated AI reviews. This action
+                          cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => disconnectMutation.mutate(repo.id)}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          disabled={disconnectMutation.isPending}
+                        >
+                          {disconnectMutation.isPending
+                            ? "Disconnecting..."
+                            : "Disconnect"}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </div>
             ))}
           </div>
