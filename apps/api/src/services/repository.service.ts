@@ -102,7 +102,7 @@ export async function connectRepository(
           content_type: "json",
           secret: process.env.GITHUB_WEBHOOK_SECRET!,
         },
-        events: ["pull_request"],
+        events: ["pull_request", "push"],
       });
     }
   } catch (error) {

@@ -152,3 +152,100 @@ export async function syncSubscriptionStatus() {
   // { success: true, data: result } on 200, so res.success is the reliable flag.
   return { success: res.success, ...(res.data || {}) };
 }
+
+// ─── Feature 2: Chat API ───────────────────────────────────────────────────
+
+export async function getChatSessions(repositoryId?: string) {
+  const params = repositoryId ? `?repositoryId=${repositoryId}` : "";
+  const res = await fetchApi<any[]>(`/api/chat/sessions${params}`);
+  return res.data || [];
+}
+
+export async function createChatSession(repositoryId: string) {
+  const res = await fetchApi<any>("/api/chat/sessions", {
+    method: "POST",
+    body: JSON.stringify({ repositoryId }),
+  });
+  return res.data;
+}
+
+export async function getChatMessages(sessionId: string) {
+  const res = await fetchApi<any[]>(`/api/chat/sessions/${sessionId}/messages`);
+  return res.data || [];
+}
+
+export async function deleteChatSession(sessionId: string) {
+  return fetchApi(`/api/chat/sessions/${sessionId}`, { method: "DELETE" });
+}
+
+/**
+ * Stream a chat message response via SSE.
+ * Returns an async generator that yields content chunks.
+ */
+export async function* streamChatMessage(
+  sessionId: string,
+  message: string
+): AsyncGenerator<{ type: "chunk" | "done" | "error"; content: string }> {
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+  const response = await fetch(`${API_BASE}/api/chat/sessions/${sessionId}/messages`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to send message");
+  }
+
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error("No response body");
+
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
+
+    for (const line of lines) {
+      if (line.startsWith("data: ")) {
+        try {
+          const data = JSON.parse(line.slice(6));
+          yield data;
+        } catch {
+          // skip malformed lines
+        }
+      }
+    }
+  }
+}
+
+// ─── Feature 4: Review Config API ──────────────────────────────────────────
+
+export interface ReviewConfigData {
+  language?: string | null;
+  focusAreas: string[];
+  severityThreshold: "low" | "medium" | "high";
+  ignorePaths: string[];
+  customRules?: string | null;
+  autoFix: boolean;
+  enabled: boolean;
+}
+
+export async function getReviewConfig(repositoryId: string) {
+  const res = await fetchApi<ReviewConfigData>(`/api/repositories/${repositoryId}/config`);
+  return res.data;
+}
+
+export async function updateReviewConfig(repositoryId: string, data: Partial<ReviewConfigData>) {
+  const res = await fetchApi<ReviewConfigData>(`/api/repositories/${repositoryId}/config`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+  return res.data;
+}

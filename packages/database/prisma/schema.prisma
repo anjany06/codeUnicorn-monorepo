@@ -54,6 +54,14 @@ model Repository {
   updatedAt DateTime @updatedAt
   reviews   Review[]
 
+  // Re-index tracking (Feature 3)
+  lastIndexedCommit String?
+  indexedAt         DateTime?
+
+  // Relations for new features
+  reviewConfig ReviewConfig?
+  chatSessions ChatSession[]
+
   @@index([userId])
   @@map("repository")
 }
@@ -132,4 +140,52 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+
+// ─── Feature 4: Review Config per Repository ────────────────────────────────
+
+model ReviewConfig {
+  id                String     @id @default(cuid())
+  repositoryId      String     @unique
+  repository        Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  language          String?
+  focusAreas        String[]   @default(["bugs", "security", "performance", "style", "best-practices"])
+  severityThreshold String     @default("low") // low, medium, high
+  ignorePaths       String[]   @default([])
+  customRules       String?    @db.Text
+  autoFix           Boolean    @default(false)
+  enabled           Boolean    @default(true)
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  @@map("review_config")
+}
+
+// ─── Feature 2: AI Codebase Chat ────────────────────────────────────────────
+
+model ChatSession {
+  id           String        @id @default(cuid())
+  repositoryId String
+  repository   Repository    @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  userId       String
+  title        String        @default("New Chat")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  messages     ChatMessage[]
+
+  @@index([userId])
+  @@index([repositoryId])
+  @@map("chat_session")
+}
+
+model ChatMessage {
+  id            String      @id @default(cuid())
+  chatSessionId String
+  chatSession   ChatSession @relation(fields: [chatSessionId], references: [id], onDelete: Cascade)
+  role          String // "user" or "assistant"
+  content       String      @db.Text
+  createdAt     DateTime    @default(now())
+
+  @@index([chatSessionId])
+  @@map("chat_message")
 }

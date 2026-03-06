@@ -1,6 +1,14 @@
 "use client";
 import React from "react";
-import { Github, BookOpen, Settings, Moon, Sun, LogOut } from "lucide-react";
+import {
+  Github,
+  BookOpen,
+  Settings,
+  Moon,
+  Sun,
+  LogOut,
+  MessageSquare,
+} from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { usePathname } from "next/navigation";
@@ -53,6 +61,11 @@ export const AppSidebar = () => {
       title: "Reviews",
       url: "/dashboard/reviews",
       icon: BookOpen,
+    },
+    {
+      title: "AI Chat",
+      url: "/dashboard/chat",
+      icon: MessageSquare,
     },
     {
       title: "Subscription",
