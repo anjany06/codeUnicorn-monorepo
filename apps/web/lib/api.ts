@@ -68,6 +68,82 @@ export async function getMonthlyActivity() {
   return res.data || [];
 }
 
+export interface CodeQualityWeek {
+  label: string;
+  security: number;
+  performance: number;
+  style: number;
+  correctness: number;
+  reviewCount: number;
+}
+
+export async function getCodeQualityTrends(): Promise<CodeQualityWeek[]> {
+  const res = await fetchApi<CodeQualityWeek[]>("/api/dashboard/code-quality");
+  return res.data || [];
+}
+
+export interface RepoHealthScore {
+  repoId: string;
+  name: string;
+  fullName: string;
+  healthScore: number;
+  docCoverage: number;
+  reviewFrequency: number;
+  reviewQuality: number;
+  configActive: boolean;
+  totalReviews: number;
+}
+
+export async function getRepositoryHealthScores(): Promise<RepoHealthScore[]> {
+  const res = await fetchApi<RepoHealthScore[]>("/api/dashboard/repo-health");
+  return res.data || [];
+}
+
+export interface DeveloperMetrics {
+  prsThisMonth: number;
+  prsLastMonth: number;
+  reviewsTriggered: number;
+  avgIssuesPerReview: number;
+  topIssueCategories: Array<{ category: string; count: number }>;
+  mostActiveRepo: string | null;
+  totalReviewsAllTime: number;
+  githubLogin: string;
+  avatarUrl: string;
+}
+
+export async function getDeveloperMetrics(): Promise<DeveloperMetrics | null> {
+  const res = await fetchApi<DeveloperMetrics>("/api/dashboard/developer-metrics");
+  return res.data || null;
+}
+
+// Contribution Graph types & API
+export interface ContributionDay {
+  date: string;
+  count: number;
+  level: 0 | 1 | 2 | 3 | 4;
+}
+
+export interface ContributionData {
+  totalContributions: number;
+  weeks: ContributionDay[][];
+  githubLogin: string;
+  avatarUrl: string;
+}
+
+export async function getContributionData(): Promise<ContributionData | null> {
+  const res = await fetchApi<ContributionData>("/api/dashboard/contributions");
+  return res.data || null;
+}
+
+export async function getContributionDataPublic(
+  userId: string,
+): Promise<ContributionData | null> {
+  const res = await fetchApi<ContributionData>(
+    `/api/dashboard/contributions/${userId}`,
+  );
+  return res.data || null;
+}
+
 // Repository API
 export async function fetchRepositories(page: number = 1, perPage: number = 10) {
   const res = await fetchApi<any[]>(

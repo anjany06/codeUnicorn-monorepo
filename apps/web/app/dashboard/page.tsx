@@ -29,10 +29,21 @@ import {
   Area,
 } from "recharts";
 import { useQuery } from "@tanstack/react-query";
-import { getDashboardStats, getMonthlyActivity } from "@/lib/api";
+import {
+  getDashboardStats,
+  getMonthlyActivity,
+  getCodeQualityTrends,
+  getRepositoryHealthScores,
+  getDeveloperMetrics,
+  getContributionData,
+} from "@/lib/api";
+import { useSession } from "@/lib/auth-client";
 import { IssueActivityFeed } from "./_components/issue-activity";
+import { CodeQualityTrends } from "./_components/code-quality-trends";
+import { RepoHealthCard } from "./_components/repo-health-card";
+import { DeveloperMetrics } from "./_components/developer-metrics";
 
-// import ContributionGraph from "@/module/dashboard/actions/components/contribution-graph";
+import { ContributionGraph } from "./_components/contribution-graph";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -531,6 +542,8 @@ const AnimatedAreaChart = ({
 };
 
 const MainPage = () => {
+  const { data: session } = useSession();
+
   const { data: stats, isLoading } = useQuery({
     queryKey: ["dashboard-stats"],
     queryFn: async () => await getDashboardStats(),
@@ -542,6 +555,37 @@ const MainPage = () => {
     queryFn: async () => await getMonthlyActivity(),
     refetchOnWindowFocus: false,
   });
+
+  const { data: codeQualityData = [], isLoading: isLoadingCodeQuality } =
+    useQuery({
+      queryKey: ["code-quality-trends"],
+      queryFn: getCodeQualityTrends,
+      refetchOnWindowFocus: false,
+    });
+
+  const { data: repoHealthData = [], isLoading: isLoadingRepoHealth } =
+    useQuery({
+      queryKey: ["repo-health-scores"],
+      queryFn: getRepositoryHealthScores,
+      refetchOnWindowFocus: false,
+    });
+
+  const {
+    data: developerMetrics = null,
+    isLoading: isLoadingDeveloperMetrics,
+  } = useQuery({
+    queryKey: ["developer-metrics"],
+    queryFn: getDeveloperMetrics,
+    refetchOnWindowFocus: false,
+  });
+
+  const { data: contributionData = null, isLoading: isLoadingContributions } =
+    useQuery({
+      queryKey: ["contribution-graph"],
+      queryFn: getContributionData,
+      staleTime: 1000 * 60 * 5,
+      refetchOnWindowFocus: false,
+    });
 
   const percentageChanges = useMemo(() => {
     return {
@@ -710,28 +754,6 @@ const MainPage = () => {
           </CardContent>
         </Card>
       </div>
-
-      {/* Contribution Graph Section */}
-      <Card className="border-border/50 bg-gradient-to-br from-card to-card/50">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="h-5 w-5 text-emerald-500" />
-                Contribution Activity
-              </CardTitle>
-              <CardDescription>
-                Your coding frequency over the past year
-              </CardDescription>
-            </div>
-            <Badge variant="outline" className="hidden sm:flex">
-              Last 365 days
-            </Badge>
-          </div>
-        </CardHeader>
-        <Separator className="mb-6" />
-        <CardContent>{/* <ContributionGraph /> */}</CardContent>
-      </Card>
 
       {/* Activity Overview with Tabs - 3D Charts */}
       <Card className="border-border/50 bg-gradient-to-br from-card to-card/50 overflow-hidden">
@@ -1020,6 +1042,30 @@ const MainPage = () => {
 
       {/* Issue Intelligence activity feed */}
       <IssueActivityFeed />
+
+      {/* ── Contribution Graph ────────────────────────────────────────── */}
+      <ContributionGraph
+        data={contributionData}
+        isLoading={isLoadingContributions}
+        userId={session?.user?.id}
+      />
+
+      {/* ── Analytics sections ─────────────────────────────────────────── */}
+
+      {/* Repository Health Scores */}
+      <RepoHealthCard data={repoHealthData} isLoading={isLoadingRepoHealth} />
+
+      {/* Code Quality Trends */}
+      <CodeQualityTrends
+        data={codeQualityData}
+        isLoading={isLoadingCodeQuality}
+      />
+
+      {/* Developer Insights */}
+      <DeveloperMetrics
+        data={developerMetrics}
+        isLoading={isLoadingDeveloperMetrics}
+      />
     </div>
   );
 };
