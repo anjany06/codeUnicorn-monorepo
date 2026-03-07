@@ -235,6 +235,7 @@ export interface ReviewConfigData {
   customRules?: string | null;
   autoFix: boolean;
   enabled: boolean;
+  issueAnalysis?: boolean;
 }
 
 export async function getReviewConfig(repositoryId: string) {
@@ -248,4 +249,61 @@ export async function updateReviewConfig(repositoryId: string, data: Partial<Rev
     body: JSON.stringify(data),
   });
   return res.data;
+}
+
+// ─── Feature A: Generated Docs API ─────────────────────────────────────────
+
+export type DocType = "readme" | "api-docs" | "architecture" | "onboarding";
+
+export interface GeneratedDoc {
+  id: string;
+  repositoryId: string;
+  type: string;
+  title: string;
+  content: string | null;
+  status: string; // "pending" | "completed" | "failed"
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function getGeneratedDocs(repositoryId: string) {
+  const res = await fetchApi<GeneratedDoc[]>(`/api/docs/${repositoryId}`);
+  return res.data || [];
+}
+
+export async function getGeneratedDoc(repositoryId: string, docType: DocType) {
+  const res = await fetchApi<GeneratedDoc>(`/api/docs/${repositoryId}/${docType}`);
+  return res.data;
+}
+
+export async function generateDoc(repositoryId: string, docType: DocType) {
+  const res = await fetchApi<{ queued: boolean }>(`/api/docs/${repositoryId}/generate`, {
+    method: "POST",
+    body: JSON.stringify({ docType }),
+  });
+  return res;
+}
+
+// ─── Feature B: Issue Analysis API ─────────────────────────────────────────
+
+export interface IssueAnalysis {
+  id: string;
+  repositoryId: string;
+  issueNumber: number;
+  issueTitle: string;
+  issueUrl: string;
+  analysis: string; // JSON string
+  postedComment: boolean;
+  createdAt: string;
+  repository?: { fullName: string };
+}
+
+export async function getIssueAnalyses(repositoryId: string) {
+  const res = await fetchApi<IssueAnalysis[]>(`/api/issue-analyses/${repositoryId}`);
+  return res.data || [];
+}
+
+export async function getAllIssueAnalyses() {
+  const res = await fetchApi<IssueAnalysis[]>(`/api/issue-analyses/`);
+  return res.data || [];
 }

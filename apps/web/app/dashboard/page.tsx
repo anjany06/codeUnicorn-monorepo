@@ -30,6 +30,7 @@ import {
 } from "recharts";
 import { useQuery } from "@tanstack/react-query";
 import { getDashboardStats, getMonthlyActivity } from "@/lib/api";
+import { IssueActivityFeed } from "./_components/issue-activity";
 
 // import ContributionGraph from "@/module/dashboard/actions/components/contribution-graph";
 import { Spinner } from "@/components/ui/spinner";
@@ -366,7 +367,8 @@ const AnimatedAreaChart = ({
                 // Filter out duplicate entries (we have line + fill for each)
                 const uniquePayload = payload.filter(
                   (entry, index, self) =>
-                    index === self.findIndex((e) => e.dataKey === entry.dataKey)
+                    index ===
+                    self.findIndex((e) => e.dataKey === entry.dataKey),
                 );
 
                 return (
@@ -728,9 +730,7 @@ const MainPage = () => {
           </div>
         </CardHeader>
         <Separator className="mb-6" />
-        <CardContent>
-          {/* <ContributionGraph /> */}
-        </CardContent>
+        <CardContent>{/* <ContributionGraph /> */}</CardContent>
       </Card>
 
       {/* Activity Overview with Tabs - 3D Charts */}
@@ -1017,6 +1017,9 @@ const MainPage = () => {
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* Issue Intelligence activity feed */}
+      <IssueActivityFeed />
     </div>
   );
 };

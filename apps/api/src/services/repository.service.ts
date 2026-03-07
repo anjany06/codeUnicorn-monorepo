@@ -91,6 +91,7 @@ export async function connectRepository(
       repo,
     });
 
+    const requiredEvents = ["pull_request", "push", "issues"];
     const existingHook = hooks.find((hook) => hook.config.url === webhookUrl);
 
     if (!existingHook) {
@@ -102,8 +103,22 @@ export async function connectRepository(
           content_type: "json",
           secret: process.env.GITHUB_WEBHOOK_SECRET!,
         },
-        events: ["pull_request", "push"],
+        events: requiredEvents,
       });
+    } else {
+      // Patch the webhook if it's missing any required events (e.g. "issues" added later)
+      const missingEvents = requiredEvents.filter(
+        (e) => !existingHook.events?.includes(e)
+      );
+      if (missingEvents.length > 0) {
+        await octokit.rest.repos.updateWebhook({
+          owner,
+          repo,
+          hook_id: existingHook.id,
+          events: [...(existingHook.events ?? []), ...missingEvents],
+          active: true,
+        });
+      }
     }
   } catch (error) {
     console.error("Error creating webhook:", error);

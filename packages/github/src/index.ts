@@ -428,6 +428,59 @@ export async function getHeadSha(
   return data.commit.sha;
 }
 
+// ─── Feature B: Issue Intelligence ─────────────────────────────────────────
+
+export async function getIssueDetails(
+  token: string,
+  owner: string,
+  repo: string,
+  issueNumber: number
+) {
+  const octokit = createOctokit(token);
+  const { data } = await octokit.rest.issues.get({ owner, repo, issue_number: issueNumber });
+  return {
+    number: data.number,
+    title: data.title,
+    body: data.body || "",
+    url: data.html_url,
+    labels: (data.labels as any[]).map((l) => (typeof l === "string" ? l : l.name as string)).filter(Boolean),
+  };
+}
+
+export async function postIssueComment(
+  token: string,
+  owner: string,
+  repo: string,
+  issueNumber: number,
+  body: string
+) {
+  const octokit = createOctokit(token);
+  const { data } = await octokit.rest.issues.createComment({
+    owner,
+    repo,
+    issue_number: issueNumber,
+    body,
+  });
+  return data.id;
+}
+
+// ─── Feature A: Open PRs list (for manual trigger) ──────────────────────────
+
+export async function getOpenPullRequests(
+  token: string,
+  owner: string,
+  repo: string
+): Promise<{ number: number; title: string; url: string }[]> {
+  const octokit = createOctokit(token);
+  const { data } = await octokit.rest.pulls.list({
+    owner,
+    repo,
+    state: "open",
+    per_page: 20,
+  });
+  return data.map((pr) => ({ number: pr.number, title: pr.title, url: pr.html_url }));
+}
+
 export async function deleteWebhook(
   token: string,
   owner: string,

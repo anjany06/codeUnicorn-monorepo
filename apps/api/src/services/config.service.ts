@@ -1,4 +1,6 @@
 import { prisma } from "@codeunicorn/database";
+import { Octokit } from "@octokit/rest";
+import { getGithubToken } from "./repository.service";
 
 // ─── Feature 4: Review Config per Repository ───────────────────────────────
 
@@ -10,6 +12,7 @@ const DEFAULT_CONFIG = {
   autoFix: false,
   enabled: true,
   language: null as string | null,
+  issueAnalysis: false,
 };
 
 export async function getReviewConfig(repositoryId: string, userId: string) {
@@ -82,6 +85,7 @@ export async function upsertReviewConfig(
       customRules: data.customRules ?? DEFAULT_CONFIG.customRules,
       autoFix: data.autoFix ?? DEFAULT_CONFIG.autoFix,
       enabled: data.enabled ?? DEFAULT_CONFIG.enabled,
+      issueAnalysis: (data as any).issueAnalysis ?? DEFAULT_CONFIG.issueAnalysis,
     },
     update: {
       ...(data.language !== undefined && { language: data.language }),
@@ -91,8 +95,37 @@ export async function upsertReviewConfig(
       ...(data.customRules !== undefined && { customRules: data.customRules }),
       ...(data.autoFix !== undefined && { autoFix: data.autoFix }),
       ...(data.enabled !== undefined && { enabled: data.enabled }),
+      ...((data as any).issueAnalysis !== undefined && { issueAnalysis: (data as any).issueAnalysis }),
     },
   });
+
+  // If issueAnalysis just got enabled, ensure the GitHub webhook subscribes to "issues"
+  if ((data as any).issueAnalysis === true) {
+    try {
+      const token = await getGithubToken(userId);
+      if (token) {
+        const octokit = new Octokit({ auth: token });
+        const webhookUrl = `${process.env.API_NROK_URL}/api/webhooks/github`;
+        const { data: hooks } = await octokit.rest.repos.listWebhooks({
+          owner: repository.owner,
+          repo: repository.name,
+        });
+        const hook = hooks.find((h) => h.config.url === webhookUrl);
+        if (hook && !hook.events?.includes("issues")) {
+          await octokit.rest.repos.updateWebhook({
+            owner: repository.owner,
+            repo: repository.name,
+            hook_id: hook.id,
+            events: [...(hook.events ?? []), "issues"],
+            active: true,
+          });
+          console.log(`Webhook updated to include 'issues' for ${repository.fullName}`);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to update webhook for issues event:", err);
+    }
+  }
 
   return config;
 }

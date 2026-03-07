@@ -32,6 +32,7 @@ import {
   Loader2,
   ArrowLeft,
   Sparkles,
+  GitPullRequestArrow,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -74,6 +75,7 @@ export function ReviewConfigPanel({
     customRules: null,
     autoFix: false,
     enabled: true,
+    issueAnalysis: false,
   });
 
   // Fetch existing config
@@ -94,6 +96,7 @@ export function ReviewConfigPanel({
         customRules: config.customRules ?? null,
         autoFix: config.autoFix ?? false,
         enabled: config.enabled ?? true,
+        issueAnalysis: config.issueAnalysis ?? false,
       });
     }
   }, [config]);
@@ -385,6 +388,31 @@ export function ReviewConfigPanel({
                 checked={formData.autoFix}
                 onCheckedChange={(checked) =>
                   setFormData((prev) => ({ ...prev, autoFix: checked }))
+                }
+              />
+            </div>
+          </CardHeader>
+        </Card>
+
+        {/* Issue Intelligence */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <GitPullRequestArrow className="h-4 w-4" />
+                  Issue Intelligence
+                </CardTitle>
+                <CardDescription>
+                  When a new GitHub issue is opened, CodeUnicorn will
+                  automatically analyze it using your indexed codebase and post
+                  a comment with relevant files &amp; suggested labels
+                </CardDescription>
+              </div>
+              <Switch
+                checked={formData.issueAnalysis ?? false}
+                onCheckedChange={(checked) =>
+                  setFormData((prev) => ({ ...prev, issueAnalysis: checked }))
                 }
               />
             </div>

@@ -59,8 +59,10 @@ model Repository {
   indexedAt         DateTime?
 
   // Relations for new features
-  reviewConfig ReviewConfig?
-  chatSessions ChatSession[]
+  reviewConfig  ReviewConfig?
+  chatSessions  ChatSession[]
+  generatedDocs GeneratedDoc[]
+  issueAnalyses IssueAnalysis[]
 
   @@index([userId])
   @@map("repository")
@@ -155,10 +157,46 @@ model ReviewConfig {
   customRules       String?    @db.Text
   autoFix           Boolean    @default(false)
   enabled           Boolean    @default(true)
+  issueAnalysis     Boolean    @default(false) // Feature B: auto-analyze issues
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
 
   @@map("review_config")
+}
+
+// ─── Feature A: Auto-Generated Documentation ────────────────────────────────
+
+model GeneratedDoc {
+  id           String     @id @default(cuid())
+  repositoryId String
+  repository   Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  type         String // "readme" | "api-docs" | "architecture" | "onboarding"
+  title        String
+  content      String     @db.Text
+  status       String     @default("pending") // "pending" | "completed" | "failed"
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([repositoryId, type])
+  @@index([repositoryId])
+  @@map("generated_doc")
+}
+
+// ─── Feature B: Issue Intelligence ──────────────────────────────────────────
+
+model IssueAnalysis {
+  id            String     @id @default(cuid())
+  repositoryId  String
+  repository    Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  issueNumber   Int
+  issueTitle    String
+  issueUrl      String
+  analysis      String     @db.Text // JSON: { relevantFiles, suggestedLabels, summary }
+  postedComment Boolean    @default(false)
+  createdAt     DateTime   @default(now())
+
+  @@index([repositoryId])
+  @@map("issue_analysis")
 }
 
 // ─── Feature 2: AI Codebase Chat ────────────────────────────────────────────
