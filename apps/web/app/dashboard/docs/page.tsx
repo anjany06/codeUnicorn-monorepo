@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -40,6 +40,59 @@ import {
   Loader2,
   FileText,
 } from "lucide-react";
+
+function MermaidDiagram({ code }: { code: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [svg, setSvg] = useState<string | null>(null);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setError(false);
+    setSvg(null);
+
+    async function render() {
+      try {
+        const mermaid = (await import("mermaid")).default;
+        mermaid.initialize({ startOnLoad: false, theme: "neutral" });
+        const id = `mermaid-${Math.random().toString(36).slice(2)}`;
+        const { svg: rendered } = await mermaid.render(id, code);
+        if (!cancelled) setSvg(rendered);
+      } catch {
+        if (!cancelled) setError(true);
+      }
+    }
+
+    render();
+    return () => {
+      cancelled = true;
+    };
+  }, [code]);
+
+  if (error) {
+    return (
+      <pre className="my-4 rounded-md overflow-x-auto px-4 py-3 text-xs font-mono whitespace-pre text-muted-foreground">
+        {code}
+      </pre>
+    );
+  }
+
+  if (!svg) {
+    return (
+      <div className="my-4 flex items-center justify-center h-24 rounded-md text-xs text-muted-foreground">
+        Rendering diagram…
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={ref}
+      className="my-4 overflow-x-auto rounded-md border border-border bg-white p-4"
+      dangerouslySetInnerHTML={{ __html: svg }}
+    />
+  );
+}
 
 const DOC_TYPES: {
   type: DocType;
@@ -182,7 +235,7 @@ export default function DocsPage() {
   const selectedRepo = repos.find((r: any) => r.id === selectedRepoId);
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6 p-4 sm:p-6 w-full max-w-full">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold">Auto-Generated Docs</h1>
@@ -195,7 +248,7 @@ export default function DocsPage() {
       {/* Repo selector */}
       <div className="flex items-center gap-3">
         <Select value={selectedRepoId} onValueChange={setSelectedRepoId}>
-          <SelectTrigger className="w-[320px]">
+          <SelectTrigger className="w-full max-w-xs sm:w-[320px]">
             <SelectValue placeholder="Select a repository…" />
           </SelectTrigger>
           <SelectContent>
@@ -228,9 +281,9 @@ export default function DocsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6">
-          {/* Doc type cards */}
-          <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-6 min-w-0 w-full max-w-full">
+          {/* Doc type cards – horizontal row at the top */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
             {DOC_TYPES.map(({ type, label, description, icon }) => {
               const docRecord = getDocStatus(type);
               const isGenerating =
@@ -307,8 +360,8 @@ export default function DocsPage() {
             })}
           </div>
 
-          {/* Markdown viewer */}
-          <Card className="min-h-[500px] flex flex-col">
+          {/* Markdown viewer – full width below the cards */}
+          <Card className="flex flex-col min-w-0 w-full max-w-full overflow-hidden">
             <CardHeader className="border-b pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base">
@@ -344,7 +397,10 @@ export default function DocsPage() {
                 )}
               </div>
             </CardHeader>
-            <CardContent className="flex-1 overflow-auto p-6">
+            <CardContent
+              className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6"
+              style={{ minHeight: "420px", maxHeight: "70vh" }}
+            >
               {!activeDocType ? (
                 <div className="h-full flex flex-col items-center justify-center text-center text-muted-foreground gap-3">
                   <FileText className="h-10 w-10 opacity-30" />
@@ -365,8 +421,36 @@ export default function DocsPage() {
                   </p>
                 </div>
               ) : activeDoc?.content ? (
-                <div className="prose prose-sm dark:prose-invert max-w-none">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                <div className="prose prose-sm dark:prose-invert max-w-full w-full break-words prose-pre:overflow-x-auto prose-img:max-w-full prose-a:text-primary prose-code:before:content-none prose-code:after:content-none">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      code: ({ className, children, ...props }) => {
+                        const isMermaid = className === "language-mermaid";
+                        if (isMermaid) {
+                          return (
+                            <MermaidDiagram code={String(children).trim()} />
+                          );
+                        }
+                        const isBlock = className?.includes("language-");
+                        return isBlock ? (
+                          <code
+                            className={`block text-foreground rounded-md px-4 py-3 overflow-x-auto text-xs font-mono whitespace-pre ${className ?? ""}`}
+                            {...props}
+                          >
+                            {children}
+                          </code>
+                        ) : (
+                          <code
+                            className="text-foreground rounded px-1.5 py-0.5 text-xs font-mono"
+                            {...props}
+                          >
+                            {children}
+                          </code>
+                        );
+                      },
+                    }}
+                  >
                     {activeDoc.content}
                   </ReactMarkdown>
                 </div>
