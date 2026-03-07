@@ -8,6 +8,7 @@ import {
   Sun,
   LogOut,
   MessageSquare,
+  BookMarked,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
@@ -66,6 +67,11 @@ export const AppSidebar = () => {
       title: "AI Chat",
       url: "/dashboard/chat",
       icon: MessageSquare,
+    },
+    {
+      title: "Docs",
+      url: "/dashboard/docs",
+      icon: BookMarked,
     },
     {
       title: "Subscription",

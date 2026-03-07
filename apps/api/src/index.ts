@@ -16,9 +16,11 @@ import { subscriptionRouter } from "./routes/subscription.routes";
 import { webhookRouter } from "./routes/webhook.routes";
 import { chatRouter } from "./routes/chat.routes";
 import { configRouter } from "./routes/config.routes";
+import { docsRouter } from "./routes/docs.routes";
+import { issueAnalysisRouter } from "./routes/issue-analysis.routes";
 
 // Import Inngest functions
-import { indexRepo, generateReview, updateIndex } from "@codeunicorn/inngest";
+import { indexRepo, generateReview, updateIndex, generateDocs, analyzeIssue } from "@codeunicorn/inngest";
 
 
 const app = express();
@@ -51,7 +53,7 @@ app.use(
   "/api/inngest",
   serve({
     client: inngest,
-    functions: [indexRepo, generateReview, updateIndex],
+    functions: [indexRepo, generateReview, updateIndex, generateDocs, analyzeIssue],
   })
 );
 
@@ -64,6 +66,8 @@ app.use("/api/reviews", reviewRouter);
 app.use("/api/subscription", subscriptionRouter);
 app.use("/api/chat", chatRouter);
 app.use("/api/repositories", configRouter); // Config routes nested under repositories
+app.use("/api/docs", docsRouter);
+app.use("/api/issue-analyses", issueAnalysisRouter);
 
 
 // Health check

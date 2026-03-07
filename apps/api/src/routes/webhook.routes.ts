@@ -147,6 +147,46 @@ webhookRouter.post("/github", async (req, res) => {
       }
     }
 
+    // ─── Feature B: Handle issues event for AI analysis ──────────────────────
+    if (event === "issues") {
+      const action = body.action;
+      if (action === "opened") {
+        const repoFullName = body.repository?.full_name;
+        const issueNumber = body.issue?.number;
+        const issueTitle = body.issue?.title;
+        const issueBody = body.issue?.body || "";
+        const issueUrl = body.issue?.html_url;
+
+        if (!repoFullName || !issueNumber) {
+          return res.status(400).json({ error: "Missing issue data" });
+        }
+
+        const [owner, repoName] = repoFullName.split("/");
+
+        const repository = await prisma.repository.findFirst({
+          where: { owner, name: repoName },
+          include: { reviewConfig: true },
+        });
+
+        if (repository && repository.reviewConfig?.issueAnalysis) {
+          console.log(`Issue opened: ${repoFullName}#${issueNumber} - triggering analysis`);
+          await inngest.send({
+            name: "issue.created",
+            data: {
+              owner,
+              repo: repoName,
+              issueNumber,
+              issueTitle,
+              issueBody,
+              issueUrl,
+              repositoryId: repository.id,
+              userId: repository.userId,
+            },
+          });
+        }
+      }
+    }
+
     res.json({ success: true, event });
   } catch (error) {
     console.error("Error processing webhook:", error);
