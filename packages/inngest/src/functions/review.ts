@@ -49,9 +49,9 @@ const structuredReviewSchema = z.object({
   issues: z.array(issueSchema).describe("Distinct bugs, security vulnerabilities, or significant code smells found in the PR"),
   // Concrete improvement suggestions not tied to a specific issue
   suggestions: z.array(z.string()).describe("Specific, actionable code improvements or refactor ideas for this PR"),
-  // Optional Mermaid sequence diagram; omit when the PR has no meaningful interaction flow
-  sequenceDiagram: z.string().optional()
-    .describe("A valid Mermaid JS sequence diagram (sequenceDiagram block) showing the flow introduced or changed by this PR. Use only simple alphanumeric labels — no quotes, braces, or parentheses inside Note text."),
+  // Mermaid sequence diagram showing the flow introduced or changed by this PR
+  sequenceDiagram: z.string()
+    .describe("A valid Mermaid JS sequence diagram (sequenceDiagram block) showing the flow introduced or changed by this PR. Always generate a diagram. Use only simple alphanumeric labels — no quotes, braces, or parentheses inside Note text."),
 });
 
 // ─── Helper: filter files by ignore patterns ────────────────────────────────
@@ -96,14 +96,13 @@ const issueTypeBadge: Record<string, string> = {
 
 function formatSummaryMarkdown(review: z.infer<typeof structuredReviewSchema>): string {
   let md = `## Summary\n\n${review.summary}\n\n`;
-  md += `## Walkthrough\n\n${review.walkthrough}\n\n`;
 
-  // ── Sequence diagram (optional) ───────────────────────────────────────────
-  if (review.sequenceDiagram) {
-    md += `## Sequence Diagram\n\n`;
-    md += `> Flow introduced or modified by this PR.\n\n`;
-    md += `\`\`\`mermaid\n${review.sequenceDiagram}\n\`\`\`\n\n`;
-  }
+  // ── Sequence diagram ──────────────────────────────────────────────────────
+  md += `## Sequence Diagram\n\n`;
+  md += `> Flow introduced or modified by this PR.\n\n`;
+  md += `\`\`\`mermaid\n${review.sequenceDiagram}\n\`\`\`\n\n`;
+
+  md += `## Walkthrough\n\n${review.walkthrough}\n\n`;
 
   if (review.strengths.length > 0) {
     md += `## Strengths\n\n${review.strengths.map((s) => `- ✅ ${s}`).join("\n")}\n\n`;
@@ -286,10 +285,10 @@ IMPORTANT INSTRUCTIONS:
 - Provide specific, actionable refactor or improvement ideas that are not tied to a single line.
 - Examples: extract a helper function, use a more efficient data structure, add input validation, improve error handling.
 
-### sequenceDiagram (optional Mermaid)
-- If this PR introduces or meaningfully changes an interaction flow (API call chain, auth flow, event pipeline, etc.), generate a sequenceDiagram block.
+### sequenceDiagram (required Mermaid)
+- ALWAYS generate a sequenceDiagram block showing the flow introduced or changed by this PR.
+- For any PR — whether it adds an API endpoint, modifies business logic, updates a UI flow, or changes data processing — produce a meaningful sequence diagram illustrating the key interactions.
 - Use ONLY simple alphanumeric participant names and message labels. Do NOT use quotes, braces, parentheses, or special characters inside Note text or arrow labels — they break Mermaid rendering.
-- If there is no meaningful flow to diagram, omit this field entirely.
 ${customRulesText}`;
 
       const { object } = await generateObject({

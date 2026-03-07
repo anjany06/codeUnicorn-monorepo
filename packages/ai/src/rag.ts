@@ -4,25 +4,55 @@ import {embed} from "ai";
 import {createGoogleGenerativeAI, google}from "@ai-sdk/google";
 import { pineconeIndex } from "./pinecone";
 
+// ─── Rate-limiting helpers ──────────────────────────────────────────────────
 
+const RATE_LIMIT_DELAY_MS = 1500; // 1.5 s between embedding calls (Gemini free tier: ~1500 RPM)
+const MAX_RETRIES = 5;
+const BASE_BACKOFF_MS = 2000;
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export async function generateEmbedding(text: string) {
-  const { embedding } = await embed({
-    model: google.textEmbeddingModel("gemini-embedding-001"),
-    value: text,
-    providerOptions: {
-      google: {
-        outputDimensionality: 768, // matching the existing Pinecone index dimension
-      },
-    },
-  });
-  return embedding;
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      const { embedding } = await embed({
+        model: google.textEmbeddingModel("gemini-embedding-001"),
+        value: text,
+        providerOptions: {
+          google: {
+            outputDimensionality: 768, // matching the existing Pinecone index dimension
+          },
+        },
+      });
+      return embedding;
+    } catch (error: any) {
+      const isRateLimit =
+        error?.statusCode === 429 ||
+        error?.message?.includes("RESOURCE_EXHAUSTED") ||
+        error?.data?.error?.status === "RESOURCE_EXHAUSTED" ||
+        error?.isRetryable;
+
+      if (isRateLimit && attempt < MAX_RETRIES - 1) {
+        const backoff = BASE_BACKOFF_MS * Math.pow(2, attempt); // 2s, 4s, 8s, 16s, 32s
+        console.warn(
+          `Rate limited (attempt ${attempt + 1}/${MAX_RETRIES}). Retrying in ${backoff}ms...`
+        );
+        await sleep(backoff);
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw new Error("generateEmbedding: max retries exceeded");
 }
 
 export async function indexCodebase(repoId:string, files:{path:string, content:string}[]){
   const vectors = [];
 
-  for(const file of files){
+  for (let i = 0; i < files.length; i++){
+    const file = files[i];
     const content = `File : ${file.path}\n\n${file.content}`;
 
     const truncatedContent = content.slice(0, 8000); // Truncate to first 8000 characters
@@ -40,6 +70,11 @@ export async function indexCodebase(repoId:string, files:{path:string, content:s
       })
     } catch (error) {
       console.log(`Failed to generate embedding for file ${file.path}:`, error);
+    }
+
+    // Rate-limit: pause between requests to avoid RESOURCE_EXHAUSTED
+    if (i < files.length - 1) {
+      await sleep(RATE_LIMIT_DELAY_MS);
     }
   }
   if(vectors.length > 0){
@@ -94,7 +129,8 @@ export async function updateCodebaseIndex(
   // Index changed/added files (same logic as indexCodebase but for delta)
   if (changedFiles.length > 0) {
     const vectors = [];
-    for (const file of changedFiles) {
+    for (let i = 0; i < changedFiles.length; i++) {
+      const file = changedFiles[i];
       const content = `File : ${file.path}\n\n${file.content}`;
       const truncatedContent = content.slice(0, 8000);
       try {
@@ -106,6 +142,11 @@ export async function updateCodebaseIndex(
         });
       } catch (error) {
         console.log(`Failed to generate embedding for file ${file.path}:`, error);
+      }
+
+      // Rate-limit: pause between requests to avoid RESOURCE_EXHAUSTED
+      if (i < changedFiles.length - 1) {
+        await sleep(RATE_LIMIT_DELAY_MS);
       }
     }
 
