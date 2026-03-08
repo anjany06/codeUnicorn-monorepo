@@ -6,20 +6,22 @@ import {
 } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Separator } from "@/components/ui/separator";
-// import { requireAuth } from "@/module/auth/utils/auth-utils";
 
 const DashboardLayout = async ({ children }: { children: React.ReactNode }) => {
-  // await requireAuth(); // protected route
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
+      <SidebarInset className="bg-background min-h-screen">
+        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border/50 bg-background/95 backdrop-blur px-4 md:px-6">
+          <SidebarTrigger className="-ml-2 text-muted-foreground hover:text-foreground" />
           <Separator orientation="vertical" className="mx-2 h-4" />
-          <h1 className="text-xl font-semibold text-foreground">Dashboard</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-sm font-medium text-foreground">Workspace</h1>
+          </div>
         </header>
-        <main className="flex-1 overflow-auto p-4 md:p-6">{children}</main>
+        <main className="flex-1 overflow-auto p-4 md:p-8 max-w-7xl mx-auto w-full">
+          {children}
+        </main>
       </SidebarInset>
     </SidebarProvider>
   );

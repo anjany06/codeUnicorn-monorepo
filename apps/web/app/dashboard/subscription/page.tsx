@@ -3,22 +3,19 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Check, ExternalLink, Loader2, RefreshCw, X } from "lucide-react";
-
+  Check,
+  X,
+  RefreshCw,
+  ExternalLink,
+  CreditCard,
+  Zap,
+} from "lucide-react";
 import { checkout, customer } from "@/lib/auth-client";
 import { useSearchParams } from "next/navigation";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { getSubscriptionData, syncSubscriptionStatus } from "@/lib/api";
-import { Spinner } from "@/components/ui/spinner";
 
 const PLAN_FEATURES = {
   free: [
@@ -33,7 +30,7 @@ const PLAN_FEATURES = {
     { name: "Unlimited repositories", included: true },
     { name: "Unlimited reviews", included: true },
     { name: "Advanced code reviews", included: true },
-    { name: "Email support", included: true },
+    { name: "Email & Priority support", included: true },
     { name: "Advanced analytics", included: true },
     { name: "Priority support", included: true },
   ],
@@ -43,8 +40,9 @@ export default function SubscriptionPage() {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
   const [syncLoading, setSyncLoading] = useState(false);
+
   const searchParams = useSearchParams();
-  const success = searchParams.get("success"); //params me success ayega if checkout is successful on the basis of that
+  const success = searchParams.get("success");
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["subscription-data"],
@@ -57,9 +55,11 @@ export default function SubscriptionPage() {
       const sync = async () => {
         try {
           const result = await syncSubscriptionStatus();
+
           if (result.success) {
             toast.success("Subscription activated! Welcome to Pro.");
           }
+
           await refetch();
         } catch (error) {
           console.error("Sync Error:", error);
@@ -68,57 +68,40 @@ export default function SubscriptionPage() {
           );
         }
       };
+
       sync();
     }
   }, [success, refetch]);
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Spinner />
+      <div className="max-w-5xl mx-auto space-y-6 pb-10">
+        <div className="space-y-1.5 animate-pulse">
+          <div className="h-8 w-48 bg-muted/20 rounded-md"></div>
+          <div className="h-4 w-72 bg-muted/10 rounded-md"></div>
+        </div>
+
+        <div className="border border-border/50 rounded-xl bg-card h-[400px] animate-pulse"></div>
       </div>
     );
   }
 
-  if (error) {
+  if (error || !data?.user) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Subscription Plans
+      <div className="max-w-5xl mx-auto space-y-6 pb-10">
+        <div className="space-y-1.5">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+            Plan and Billing
           </h1>
-          <p className="text-muted-foreground">
-            Failed to load subscription data
+
+          <p className="text-sm text-destructive">
+            Failed to load subscription data or you are not signed in.
           </p>
         </div>
 
-        <Alert variant="destructive">
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>
-            Failed to load subscription data. Please try again.
-            <Button
-              variant="outline"
-              size="sm"
-              className="ml-4"
-              onClick={() => refetch()}
-            ></Button>
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
-  if (!data?.user) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Subscription Plans
-          </h1>
-          <p className="text-muted-foreground">
-            Please sign in to view subscription options
-          </p>
-        </div>
+        <Button variant="outline" size="sm" onClick={() => refetch()}>
+          Retry
+        </Button>
       </div>
     );
   }
@@ -130,9 +113,11 @@ export default function SubscriptionPage() {
   const handleSync = async () => {
     try {
       setSyncLoading(true);
+
       const result = await syncSubscriptionStatus();
-      // Always refetch so the UI reflects the latest DB state
+
       await refetch();
+
       if (result.success) {
         toast.success("Subscription status synced successfully");
       } else {
@@ -147,19 +132,22 @@ export default function SubscriptionPage() {
       setSyncLoading(false);
     }
   };
+
   const handleUpgrade = async () => {
     try {
       setCheckoutLoading(true);
 
-      // Temporarily intercept to see raw error
       const origFetch = window.fetch;
+
       window.fetch = async (...args) => {
         const res = await origFetch(...args);
+
         if (!res.ok && String(args[0]).includes("checkout")) {
           const clone = res.clone();
           const body = await clone.text();
           console.error("Checkout raw error:", res.status, body);
         }
+
         return res;
       };
 
@@ -167,240 +155,236 @@ export default function SubscriptionPage() {
         slug: "codeUnicorn-new-dev",
       });
 
-      window.fetch = origFetch; // restore
+      window.fetch = origFetch;
     } catch (error) {
       console.error("Checkout Error:", error);
-      setCheckoutLoading(false);
       toast.error("Failed to initiate checkout. Please try again.");
     } finally {
       setCheckoutLoading(false);
     }
   };
+
   const handleManageSubscription = async () => {
     try {
       setPortalLoading(true);
       await customer.portal();
     } catch (error) {
       console.error("Portal Error:", error);
-      setPortalLoading(false);
     } finally {
       setPortalLoading(false);
     }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Subscription Plans
+    <div className="max-w-5xl mx-auto space-y-10 pb-10">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div className="space-y-1.5">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+            Plan and Billing
           </h1>
-          <p className="text-muted-foreground">
-            Choose the perfect plan for your needs
+
+          <p className="text-sm text-muted-foreground max-w-md">
+            Manage your subscription tier and payment methods.
           </p>
         </div>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleSync}
-          disabled={syncLoading}
-        >
-          {syncLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <RefreshCw className="h-4 w-4" />
-          )}{" "}
-          Sync Subscription
-        </Button>
-      </div>
-      {success === "true" && (
-        <Alert className="border-green-500 bg-green-50 dark:bg-green-950">
-          <Check className="h-4 w-4 text-green-600" />
-          <AlertTitle>Success!</AlertTitle>
-          <AlertDescription>
-            Your subscription was successful. Change may take a few minutes to
-            reflect
-          </AlertDescription>
-        </Alert>
-      )}
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSync}
+            disabled={syncLoading}
+            className="h-8 text-xs bg-background"
+          >
+            <RefreshCw
+              className={`h-3.5 w-3.5 mr-1.5 ${
+                syncLoading ? "animate-spin" : ""
+              }`}
+            />
+            Sync Status
+          </Button>
 
-      {/* Current Usage */}
-      {data.limits && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Current Usage</CardTitle>
-            <CardDescription>
-              Your current plan limits and usage
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Repositories</span>
-                  <Badge
-                    variant={
-                      data.limits.repositories.canAdd
-                        ? "default"
-                        : "destructive"
-                    }
-                  >
-                    {data.limits.repositories.current}/{" "}
-                    {data.limits.repositories.limit ?? "∞"}
-                  </Badge>
-                </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className={`h-full ${
-                      data.limits.repositories.canAdd
-                        ? "bg-primary"
-                        : "bg-destructive"
-                    }`}
-                    style={{
-                      width: data.limits.repositories.limit
-                        ? `${Math.min(
-                            (data.limits.repositories.current /
-                              data.limits.repositories.limit) *
-                              100,
-                            100,
-                          )} %`
-                        : "0%",
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">
-                    Reviews per repository
-                  </span>
-                  <Badge variant="outline">
-                    {isPro ? "Unlimited" : "5 per repo"}
-                  </Badge>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {isPro
-                    ? "No limits on reviews"
-                    : "Free tier allows 5 reviews per repository"}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Plans */}
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Free Plan */}
-        <Card className={!isPro ? "ring-2 ring-primary" : ""}>
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div>
-                <CardTitle>Free</CardTitle>
-                <CardDescription>Perfect for getting started</CardDescription>
-              </div>
-              {!isPro && <Badge className="ml-2">Current Plan</Badge>}
-            </div>
-            <div className="mt-2">
-              <span className="text-3xl font-bold">$0</span>
-              <span className="text-muted-foreground">/month</span>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              {PLAN_FEATURES.free.map((feature) => (
-                <div key={feature.name} className="flex items-center gap-2">
-                  {feature.included ? (
-                    <Check className="h-4 w-4 text-primary shrink-0" />
-                  ) : (
-                    <X className="h-4 w-4 text-muted-foreground shrink-0" />
-                  )}
-                  <span
-                    className={feature.included ? "" : "text-muted-foreground"}
-                  >
-                    {feature.name}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <Button className="w-full" variant="outline" disabled>
-              {!isPro ? "Current Plan" : "Select Free Plan"}
+          {(isPro || isActive) && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleManageSubscription}
+              disabled={portalLoading}
+              className="h-8 text-xs bg-background"
+            >
+              <CreditCard className="h-3.5 w-3.5 mr-1.5" />
+              Manage Billing
             </Button>
-          </CardContent>
-        </Card>
+          )}
+        </div>
+      </div>
 
-        {/* Pro Plan */}
-        <Card className={isPro ? "ring-2 ring-primary" : ""}>
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div>
-                <CardTitle>Pro</CardTitle>
-                <CardDescription>For professional developers</CardDescription>
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* FREE PLAN */}
+
+        <div
+          className={`relative border ${
+            !isPro
+              ? "border-primary shadow-sm bg-muted/5"
+              : "border-border/60 bg-card hover:border-border hover:shadow-sm"
+          } rounded-xl p-6 flex flex-col transition-all duration-200 hover:-translate-y-[2px]`}
+        >
+          {!isPro && (
+            <div className="absolute top-0 right-6 transform -translate-y-1/2">
+              <span className="bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider py-1 px-3 rounded-full">
+                Current Plan
+              </span>
+            </div>
+          )}
+
+          <div className="space-y-2 mb-6">
+            <h3 className="text-lg font-semibold text-foreground">Developer</h3>
+
+            <div className="flex items-end gap-1">
+              <span className="text-4xl font-bold tracking-tight text-foreground">
+                $0
+              </span>
+
+              <span className="text-sm text-muted-foreground mb-1">/month</span>
+            </div>
+
+            <p className="text-sm text-muted-foreground">
+              Perfect for individuals or getting started with AI reviews.
+            </p>
+          </div>
+
+          <div className="space-y-3 flex-1 mt-2">
+            {PLAN_FEATURES.free.map((feature, i) => (
+              <div key={i} className="flex items-center gap-3 text-sm">
+                {feature.included ? (
+                  <Check className="h-4 w-4 text-green-500 shrink-0" />
+                ) : (
+                  <X className="h-4 w-4 text-muted-foreground/30 shrink-0" />
+                )}
+
+                <span
+                  className={
+                    feature.included
+                      ? "text-foreground"
+                      : "text-muted-foreground/50"
+                  }
+                >
+                  {feature.name}
+                </span>
               </div>
-              {isPro && <Badge className="ml-2">Current Plan</Badge>}
+            ))}
+          </div>
+
+          <div className="border-t border-border/40 mt-6 pt-6">
+            <Button
+              variant="outline"
+              className="w-full h-10 text-sm pointer-events-none opacity-50"
+            >
+              {isPro ? "Included in Pro" : "Active Plan"}
+            </Button>
+          </div>
+        </div>
+
+        {/* PRO PLAN */}
+
+        <div
+          className={`relative border ${
+            isPro
+              ? "border-primary shadow-md bg-muted/10"
+              : "border-border/60 bg-card hover:border-border hover:shadow-sm"
+          } rounded-xl p-6 flex flex-col transition-all duration-200 hover:-translate-y-[2px]`}
+        >
+          {!isPro && (
+            <div className="absolute left-6 -top-3">
+              <span className="text-[10px] font-semibold uppercase tracking-wider bg-primary text-primary-foreground px-3 py-1 rounded-full shadow-sm">
+                Most Popular
+              </span>
             </div>
-            <div className="mt-2">
-              <span className="text-3xl font-bold">$29</span>
-              <span className="text-muted-foreground">/month</span>
+          )}
+
+          {isPro && (
+            <div className="absolute top-0 right-6 transform -translate-y-1/2">
+              <div className="flex items-center gap-1.5 bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider py-1 px-3 rounded-full">
+                <Zap className="h-3 w-3 fill-current" />
+                Current Plan
+              </div>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              {PLAN_FEATURES.free.map((feature) => (
-                <div key={feature.name} className="flex items-center gap-2">
-                  {feature.included ? (
-                    <Check className="h-4 w-4 text-primary shrink-0" />
-                  ) : (
-                    <X className="h-4 w-4 text-muted-foreground shrink-0" />
-                  )}
-                  <span
-                    className={feature.included ? "" : "text-muted-foreground"}
-                  >
-                    {feature.name}
-                  </span>
-                </div>
-              ))}
+          )}
+
+          <div className="space-y-2 mb-6">
+            <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              Team
+              {isPro && isActive && (
+                <Badge className="h-5 px-1.5 text-[9px] bg-green-500/10 text-green-600 border-0 uppercase tracking-widest">
+                  Active
+                </Badge>
+              )}
+            </h3>
+
+            <div className="flex items-end gap-1">
+              <span className="text-4xl font-bold tracking-tight text-foreground">
+                $15
+              </span>
+
+              <span className="text-sm text-muted-foreground mb-1">/month</span>
             </div>
-            {isPro && isActive ? (
+
+            <p className="text-sm text-muted-foreground">
+              Unlimited power for shipping high-quality code.
+            </p>
+          </div>
+
+          <div className="space-y-3 flex-1 mt-2">
+            {PLAN_FEATURES.pro.map((feature, i) => (
+              <div key={i} className="flex items-center gap-3 text-sm">
+                <Check className="h-4 w-4 text-primary shrink-0" />
+
+                <span className="text-foreground">{feature.name}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="border-t border-border/40 mt-6 pt-6">
+            {isPro ? (
               <Button
-                className="w-full"
-                variant="outline"
                 onClick={handleManageSubscription}
                 disabled={portalLoading}
+                className="w-full h-10 text-sm font-medium bg-primary"
               >
-                {portalLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Opening
-                    Portal...
-                  </>
-                ) : (
-                  <>
-                    <ExternalLink className="ml-2 h-4 w-4" />
-                    Manage Subscription
-                  </>
-                )}
+                {portalLoading ? "Redirecting..." : "Manage Billing"}
+                <ExternalLink className="h-3.5 w-3.5 ml-1.5" />
               </Button>
             ) : (
               <Button
-                className="w-full"
                 onClick={handleUpgrade}
-                disabled={checkoutLoading}
+                disabled={checkoutLoading || syncLoading}
+                className="w-full h-10 text-sm font-medium bg-primary hover:bg-primary/90 shadow-sm"
               >
-                {checkoutLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Loading Checkout...
-                  </>
-                ) : (
-                  "Upgrade to Pro"
-                )}
+                {checkoutLoading ? "Preparing Checkout..." : "Upgrade to Team"}
+                <Zap className="h-3.5 w-3.5 ml-1.5 fill-current" />
               </Button>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
+
+      {!isPro && (
+        <div className="mt-12 border-t border-border/40 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="space-y-1 text-center sm:text-left">
+            <h4 className="text-sm font-medium text-foreground">
+              Need more repositories or enterprise support?
+            </h4>
+
+            <p className="text-sm text-muted-foreground">
+              Our enterprise plans offer custom SLAs and dedicated support.
+            </p>
+          </div>
+
+          <Button variant="outline" size="sm" className="h-9 text-sm">
+            Contact Sales
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

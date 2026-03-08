@@ -43,7 +43,7 @@ export function RepositoryList() {
   const { data: repositories, isLoading } = useQuery({
     queryKey: ["connected-repositories"],
     queryFn: async () => await getConnectedRepositories(),
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
   });
 
@@ -81,16 +81,18 @@ export function RepositoryList() {
   if (isLoading) {
     return (
       <Card>
+        {" "}
         <CardHeader>
-          <CardTitle>Connected Repositories</CardTitle>
+          {" "}
+          <CardTitle>Connected Repositories</CardTitle>{" "}
           <CardDescription>
-            Manage your connected Github repositories.
-          </CardDescription>
+            Manage your connected Github repositories.{" "}
+          </CardDescription>{" "}
         </CardHeader>
         <CardContent>
           <div className="animate-pulse space-y-4">
-            <div className="h-20 bg-muted-foreground"></div>
-            <div className="h-20 bg-muted-foreground"></div>
+            <div className="h-20 bg-muted-foreground rounded"></div>
+            <div className="h-20 bg-muted-foreground rounded"></div>
           </div>
         </CardContent>
       </Card>
@@ -100,42 +102,48 @@ export function RepositoryList() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <CardTitle>Connected Repositories</CardTitle>
             <CardDescription>
-              Manage your connected Github repositories.
+              Manage your connected Github repositories
             </CardDescription>
           </div>
-
           {repositories && repositories.length > 0 && (
             <AlertDialog
               open={disconntedAllOpen}
               onOpenChange={setDisconnectedAllOpen}
             >
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="w-full sm:w-auto"
+                >
                   <Trash className="h-4 w-4 mr-2" />
                   Disconnect All
                 </Button>
               </AlertDialogTrigger>
+
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle className="flex items-center gap-2">
                     Disconnect All Repositories?
                   </AlertDialogTitle>
+
                   <AlertDialogDescription>
-                    This will disconnect all {repositories.length} respositories
+                    This will disconnect all {repositories.length} repositories
                     and delete all associated AI reviews. This action cannot be
                     undone.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
+
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
+
                   <AlertDialogAction
                     onClick={() => disconnectAllMutation.mutate()}
-                    className="bg-destructive text-destructive-foreground
-                     hover:bg-destructive/90"
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     disabled={disconnectAllMutation.isPending}
                   >
                     {disconnectAllMutation.isPending
@@ -148,11 +156,11 @@ export function RepositoryList() {
           )}
         </div>
       </CardHeader>
-
       <CardContent>
         {!repositories || repositories.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <p>No Respositories connected yet.</p>
+
             <p className="text-sm mt-2">
               Connect repositories from the repository page.
             </p>
@@ -162,24 +170,30 @@ export function RepositoryList() {
             {repositories.map((repo) => (
               <div
                 key={repo.id}
-                className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
               >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-medium truncate">{repo.fullName}</h3>
-                    <a
-                      href={repo.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-muted-foreground hover:text-foreground"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                    </a>
-                  </div>
+                {/* Repo Info */}
+                <div className="flex items-center gap-2 min-w-0">
+                  <h3 className="font-medium truncate">{repo.fullName}</h3>
+
+                  <a
+                    href={repo.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-muted-foreground hover:text-foreground shrink-0"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
                 </div>
 
-                <div className="flex items-center gap-2 ml-4">
-                  <Button variant="outline" size="sm" asChild>
+                {/* Actions */}
+                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    asChild
+                    className="flex-1 sm:flex-none"
+                  >
                     <Link href={`/dashboard/repository/config/${repo.id}`}>
                       <Settings2 className="w-4 h-4 mr-1" />
                       Configure
@@ -191,24 +205,28 @@ export function RepositoryList() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="ml-4 text-destructive hover:text-destructive/10 hover:bg-destructive/10"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </AlertDialogTrigger>
+
                     <AlertDialogContent>
                       <AlertDialogHeader>
                         <AlertDialogTitle>
                           Disconnect Repository?
                         </AlertDialogTitle>
+
                         <AlertDialogDescription>
                           This will disconnect <strong>{repo.fullName}</strong>{" "}
                           and delete all associated AI reviews. This action
                           cannot be undone.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
+
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
+
                         <AlertDialogAction
                           onClick={() => disconnectMutation.mutate(repo.id)}
                           className="bg-destructive text-destructive-foreground hover:bg-destructive/90"

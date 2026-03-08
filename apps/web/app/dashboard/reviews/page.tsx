@@ -1,18 +1,17 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { getReviews } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
-import { CheckCircle2, Clock, ExternalLink, XCircle } from "lucide-react";
+import {
+  CheckCircle2,
+  Clock,
+  ExternalLink,
+  XCircle,
+  FileText,
+  Github,
+} from "lucide-react";
 
 export default function ReviewsPage() {
   const { data: reviews, isLoading } = useQuery({
@@ -23,99 +22,189 @@ export default function ReviewsPage() {
   });
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="max-w-6xl mx-auto space-y-6 pb-10 px-4 sm:px-6">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Review History
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Log of AI code reviews across your repositories
+          </p>
+        </div>
+
+        <div className="border border-border/50 rounded-xl bg-card overflow-hidden">
+          <div className="divide-y divide-border/40">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-[72px] bg-muted/10 animate-pulse" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="max-w-6xl mx-auto space-y-6 pb-10 px-4 sm:px-6">
+      {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Review History</h1>
-        <p className="text-muted-foreground">View all AI code reviews</p>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          Review History
+        </h1>
+
+        <p className="text-sm text-muted-foreground">
+          A complete log of all code reviews performed across your repositories.
+        </p>
       </div>
-      {reviews?.length === 0 ? (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">
-                No reviews yet. Connect a repository and open a PR
-              </p>
+
+      <div className="border border-border/60 rounded-xl bg-card shadow-sm overflow-hidden">
+        {!reviews || reviews.length === 0 ? (
+          <div className="py-20 flex flex-col items-center text-center">
+            <div className="h-12 w-12 rounded-full border bg-muted/30 flex items-center justify-center mb-4">
+              <FileText className="h-5 w-5 text-muted-foreground" />
             </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4">
-          {reviews?.map((review: any) => (
-            <Card key={review.id} className="hover:shadow-md transition-shadow">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="space-y-2 flex-1">
-                    <div className="flex items-center gap-2">
-                      <CardTitle className="text-lg">
-                        {review.prTitle}
-                      </CardTitle>
+
+            <h3 className="text-sm font-medium">No reviews yet</h3>
+
+            <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+              Connect a repository and open a pull request to see AI reviews
+              here.
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Desktop Header */}
+            <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-3 bg-muted/40 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              <div className="col-span-6">Pull Request</div>
+              <div className="col-span-3">Repository</div>
+              <div className="col-span-2">Date</div>
+              <div className="col-span-1"></div>
+            </div>
+
+            <div className="divide-y divide-border/40">
+              {reviews.map((review: any) => (
+                <div
+                  key={review.id}
+                  className="p-4 hover:bg-muted/10 transition-all duration-200 hover:shadow-sm"
+                >
+                  {/* MOBILE */}
+                  <div className="flex flex-col gap-3 md:hidden">
+                    <div className="flex items-start gap-2">
                       {review.status === "completed" && (
-                        <Badge variant="default" className="gap-1">
-                          <CheckCircle2 className="h-3 w-3" />
-                          Completed
-                        </Badge>
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-1" />
                       )}
+
                       {review.status === "failed" && (
-                        <Badge variant="destructive" className="gap-1">
-                          <XCircle className="h-3 w-3" />
-                          Failed
-                        </Badge>
+                        <XCircle className="h-4 w-4 text-rose-500 mt-1" />
                       )}
+
                       {review.status === "pending" && (
-                        <Badge variant="secondary" className="gap-1">
-                          <Clock className="h-3 w-3" />
-                          Pending
-                        </Badge>
+                        <Clock className="h-4 w-4 text-amber-500 mt-1" />
                       )}
+
+                      <div className="flex flex-col gap-1">
+                        <span className="font-medium text-sm break-words">
+                          {review.prTitle}
+                        </span>
+
+                        <span className="text-xs text-muted-foreground font-mono">
+                          #{review.prNumber}
+                        </span>
+                      </div>
                     </div>
-                    <CardDescription>
-                      {review.repository.fullName} * PR #{review.prNumber}
-                    </CardDescription>
-                  </div>
-                  <Button variant="ghost" size="icon" asChild>
-                    <a
-                      href={review.prUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="text-sm text-muted-foreground">
-                    {formatDistanceToNow(new Date(review.createdAt), {
-                      addSuffix: true,
-                    })}
-                  </div>
-                  <div className="prose prose-sm dark:prose-invert max-w-none">
-                    <div className="bg-muted p-4 rounded-1g">
-                      <pre className="whitespace-pre-wrap text-xs">
-                        {review.review.substring(0, 300)} ...
-                      </pre>
+
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Github className="h-3.5 w-3.5" />
+                      {review.repository.fullName}
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(review.createdAt), {
+                          addSuffix: true,
+                        })}
+                      </span>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        asChild
+                        className="h-7 text-xs"
+                      >
+                        <a
+                          href={review.prUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          View PR
+                          <ExternalLink className="ml-1.5 h-3 w-3" />
+                        </a>
+                      </Button>
                     </div>
                   </div>
-                  <Button variant="outline" asChild>
-                    <a
-                      href={review.prUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      View Full Review on GitHub
-                    </a>
-                  </Button>
+
+                  {/* DESKTOP */}
+                  <div className="hidden md:grid grid-cols-12 gap-4 items-start">
+                    <div className="col-span-6 flex items-start gap-3 min-w-0">
+                      {review.status === "completed" && (
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
+                      )}
+
+                      {review.status === "failed" && (
+                        <XCircle className="h-4 w-4 text-rose-500 mt-0.5 shrink-0" />
+                      )}
+
+                      {review.status === "pending" && (
+                        <Clock className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                      )}
+
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-medium text-sm leading-snug line-clamp-2 break-words">
+                          {review.prTitle}
+                        </span>
+
+                        <span className="text-xs text-muted-foreground border border-border w-fit px-1.5 py-0.5 rounded-md font-mono mt-1">
+                          #{review.prNumber}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="col-span-3 text-sm text-muted-foreground flex items-center gap-2 min-w-0">
+                      <Github className="h-3.5 w-3.5 opacity-70 shrink-0" />
+                      <span className="truncate">
+                        {review.repository.fullName}
+                      </span>
+                    </div>
+
+                    <div className="col-span-2 text-sm text-muted-foreground">
+                      {formatDistanceToNow(new Date(review.createdAt), {
+                        addSuffix: true,
+                      })}
+                    </div>
+
+                    <div className="col-span-1 flex justify-end">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        asChild
+                        className="h-7 text-xs"
+                      >
+                        <a
+                          href={review.prUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+              ))}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
