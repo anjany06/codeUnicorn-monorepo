@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useState, useEffect } from "react";
 import {
   Github,
@@ -11,11 +12,12 @@ import {
   BookMarked,
   Activity,
   CreditCard,
-  Building,
 } from "lucide-react";
+
 import { useTheme } from "next-themes";
 import { usePathname } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
+
 import {
   Sidebar,
   SidebarContent,
@@ -27,8 +29,11 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarGroupContent,
+  useSidebar,
 } from "@/components/ui/sidebar";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,29 +42,33 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
+
 import Link from "next/link";
 import Logout from "./auth/logout";
 import Image from "next/image";
 
 export const AppSidebar = () => {
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const { data: session } = useSession();
+  const { state } = useSidebar();
+  const isCollapsed = state === "collapsed";
+
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const topNavigation = [
+  const navigation = [
     { title: "Dashboard", url: "/dashboard", icon: Activity },
     { title: "Repositories", url: "/dashboard/repository", icon: Github },
     { title: "Reviews", url: "/dashboard/reviews", icon: BookOpen },
     { title: "AI Chat", url: "/dashboard/chat", icon: MessageSquare },
+    { title: "Repo Docs", url: "/dashboard/docs", icon: BookMarked },
   ];
 
   const secondaryNavigation = [
-    { title: "Documentation", url: "/dashboard/docs", icon: BookMarked },
     { title: "Subscription", url: "/dashboard/subscription", icon: CreditCard },
     { title: "Settings", url: "/dashboard/settings", icon: Settings },
   ];
@@ -75,6 +84,7 @@ export const AppSidebar = () => {
   const userName = user.name || "Developer";
   const userEmail = user.email || "";
   const userAvatar = user.image || null;
+
   const userInitials = userName
     .split(" ")
     .map((n) => n[0])
@@ -83,47 +93,95 @@ export const AppSidebar = () => {
     .slice(0, 2);
 
   return (
-    <Sidebar className="border-r border-border bg-sidebar">
-      <SidebarHeader className="border-b border-border/50 h-16 flex items-center px-4">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-white flex transform transition-transform hover:rotate-3 p-1">
+    <Sidebar
+      collapsible="icon"
+      style={{ "--sidebar-width-icon": "4rem" } as React.CSSProperties}
+      className="h-screen flex flex-col overflow-hidden border-r border-border/60 bg-muted/20 backdrop-blur-sm"
+    >
+      {/* HEADER */}
+
+      <SidebarHeader className="h-16 flex items-center border-b border-border/40 shrink-0 px-3">
+        <div className="flex items-center gap-3 w-full">
+          <div className="h-9 w-9 rounded-lg bg-white border border-border flex items-center justify-center shrink-0 overflow-hidden">
             <Image
               src="/code-logo-bg.png"
-              alt="CodeUnicorn Logo"
-              width={100}
-              height={100}
-              className="w-full h-full object-cover"
+              alt="CodeUnicorn"
+              width={28}
+              height={28}
+              className="object-contain"
             />
           </div>
-          <h1 className="text-lg font-bold tracking-tight text-white/90">
+
+          <span
+            className={`font-semibold text-sm tracking-tight whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${
+              isCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"
+            }`}
+          >
             CodeUnicorn
-          </h1>
+          </span>
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-3 py-4 gap-6">
+      {/* CONTENT */}
+
+      <SidebarContent className="flex-1 px-2 py-6 space-y-8 overflow-hidden">
+        {/* GENERAL */}
+
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-medium text-sidebar-foreground/50 tracking-normal mb-2 px-2">
-            Overview
+          <SidebarGroupLabel
+            className={`px-2 text-[11px] uppercase tracking-wider text-muted-foreground whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${
+              isCollapsed
+                ? "max-h-0 opacity-0 py-0 mb-0"
+                : "max-h-10 opacity-100"
+            }`}
+          >
+            General
           </SidebarGroupLabel>
+
           <SidebarGroupContent>
-            <SidebarMenu className="gap-1">
-              {topNavigation.map((item) => (
+            <SidebarMenu className="mt-2 space-y-1">
+              {navigation.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
                     tooltip={item.title}
-                    className={`h-9 px-3 rounded-md transition-colors ${
+                    className={`h-10 rounded-lg transition-all duration-300 relative flex items-center ${
+                      isCollapsed ? "justify-center px-1" : "px-2 gap-3"
+                    } ${
                       isActive(item.url)
-                        ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                        : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                        ? "bg-accent text-accent-foreground"
+                        : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
                     }`}
                   >
-                    <Link href={item.url} className="flex items-center gap-3">
-                      <item.icon
-                        className={`w-4 h-4 shrink-0 ${isActive(item.url) ? "text-sidebar-accent-foreground" : "text-sidebar-foreground/60"}`}
-                      />
-                      <span className="text-sm">{item.title}</span>
+                    <Link
+                      href={item.url}
+                      className={`flex items-center w-full ${
+                        isCollapsed ? "justify-center" : "gap-3"
+                      }`}
+                    >
+                      {isActive(item.url) && !isCollapsed && (
+                        <span className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r bg-primary" />
+                      )}
+
+                      <div
+                        className={`flex items-center justify-center w-8 h-8 rounded-md shrink-0 transition-colors duration-200 ${
+                          isActive(item.url)
+                            ? "bg-primary/10 text-primary"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        <item.icon size={17} />
+                      </div>
+
+                      <span
+                        className={`text-sm whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${
+                          isCollapsed
+                            ? "max-w-0 opacity-0"
+                            : "max-w-[200px] opacity-100"
+                        }`}
+                      >
+                        {item.title}
+                      </span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -132,111 +190,142 @@ export const AppSidebar = () => {
           </SidebarGroupContent>
         </SidebarGroup>
 
+        {/* OTHER */}
+
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-medium text-sidebar-foreground/50 tracking-normal mb-2 px-2">
-            Preferences
+          <SidebarGroupLabel
+            className={`px-2 text-[11px] uppercase tracking-wider text-muted-foreground whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${
+              isCollapsed
+                ? "max-h-0 opacity-0 py-0 mb-0"
+                : "max-h-10 opacity-100"
+            }`}
+          >
+            Other
           </SidebarGroupLabel>
+
           <SidebarGroupContent>
-            <SidebarMenu className="gap-1">
+            <SidebarMenu className="mt-2 space-y-1">
               {secondaryNavigation.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
                     tooltip={item.title}
-                    className={`h-9 px-3 rounded-md transition-colors ${
+                    className={`h-10 rounded-lg transition-all duration-300 flex items-center ${
+                      isCollapsed ? "justify-center px-1" : "px-2 gap-3"
+                    } ${
                       isActive(item.url)
-                        ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                        : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                        ? "bg-accent text-accent-foreground"
+                        : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
                     }`}
                   >
-                    <Link href={item.url} className="flex items-center gap-3">
-                      <item.icon className="w-4 h-4 shrink-0 text-sidebar-foreground/60" />
-                      <span className="text-sm">{item.title}</span>
+                    <Link
+                      href={item.url}
+                      className={`flex items-center w-full ${
+                        isCollapsed ? "justify-center" : "gap-3"
+                      }`}
+                    >
+                      <div className="flex items-center justify-center w-8 h-8 rounded-md shrink-0 bg-muted text-muted-foreground">
+                        <item.icon size={17} />
+                      </div>
+
+                      <span
+                        className={`text-sm whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${
+                          isCollapsed
+                            ? "max-w-0 opacity-0"
+                            : "max-w-[200px] opacity-100"
+                        }`}
+                      >
+                        {item.title}
+                      </span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+
+              {/* THEME TOGGLE */}
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                  tooltip={theme === "dark" ? "Light Mode" : "Dark Mode"}
+                  className={`h-10 rounded-lg transition-all duration-300 flex items-center text-muted-foreground hover:bg-accent/60 hover:text-foreground ${
+                    isCollapsed ? "justify-center px-1" : "px-2 gap-3"
+                  }`}
+                >
+                  <div className="flex items-center justify-center w-8 h-8 rounded-md shrink-0 bg-muted">
+                    {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
+                  </div>
+
+                  <span
+                    className={`text-sm whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${
+                      isCollapsed
+                        ? "max-w-0 opacity-0"
+                        : "max-w-[200px] opacity-100"
+                    }`}
+                  >
+                    {theme === "dark" ? "Light Mode" : "Dark Mode"}
+                  </span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-border/50 p-3">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton
-                  size="lg"
-                  className="h-12 px-3 rounded-md data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent/50 transition-colors w-full"
-                >
-                  <Avatar className="h-8 w-8 rounded-md shrink-0 border border-border/50">
-                    <AvatarImage
-                      src={userAvatar || "/placeholder.svg"}
-                      alt={userName}
-                    />
-                    <AvatarFallback className="rounded-md bg-muted text-muted-foreground text-xs font-medium">
-                      {userInitials}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="grid flex-1 text-left text-sm min-w-0 ml-2">
-                    <span className="truncate font-medium text-sidebar-foreground">
-                      {userName}
-                    </span>
-                  </div>
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="center"
-                side="top"
-                className="w-56 rounded-lg shadow-md border-border p-1"
-                sideOffset={12}
+      {/* USER CARD */}
+
+      <SidebarFooter className="border-t border-border/40 shrink-0 p-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <div
+              className={`flex items-center gap-3 p-2 rounded-lg hover:bg-accent/60 cursor-pointer transition-all duration-300 ${
+                isCollapsed ? "justify-center" : ""
+              }`}
+            >
+              <Avatar className="h-9 w-9 rounded-lg border border-border shrink-0">
+                <AvatarImage src={userAvatar || ""} />
+                <AvatarFallback className="rounded-lg">
+                  {userInitials}
+                </AvatarFallback>
+              </Avatar>
+
+              <span
+                className={`text-sm font-medium whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${
+                  isCollapsed
+                    ? "max-w-0 opacity-0"
+                    : "max-w-[200px] opacity-100"
+                }`}
               >
-                <DropdownMenuLabel className="px-2.5 py-2 font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none text-foreground">
-                      {userName}
-                    </p>
-                    <p className="text-xs leading-none text-muted-foreground truncate">
-                      {userEmail}
-                    </p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-border/50" />
-                <div className="p-1">
-                  <DropdownMenuItem
-                    onClick={() =>
-                      setTheme(theme === "dark" ? "light" : "dark")
-                    }
-                    className="flex items-center gap-2 cursor-pointer rounded-md px-2.5 py-2 text-sm focus:bg-accent focus:text-accent-foreground"
-                  >
-                    {theme === "dark" ? (
-                      <>
-                        <Sun className="w-4 h-4 text-muted-foreground" />
-                        <span>Light Mode</span>
-                      </>
-                    ) : (
-                      <>
-                        <Moon className="w-4 h-4 text-muted-foreground" />
-                        <span>Dark Mode</span>
-                      </>
-                    )}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-border/50 my-1" />
-                  <DropdownMenuItem
-                    asChild
-                    className="focus:bg-destructive/10 focus:text-destructive text-destructive px-2.5 py-2 cursor-pointer rounded-md"
-                  >
-                    <div className="flex items-center w-full">
-                      <LogOut className="w-4 h-4 mr-2" />
-                      <Logout>Sign out</Logout>
-                    </div>
-                  </DropdownMenuItem>
-                </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-        </SidebarMenu>
+                {userName}
+              </span>
+            </div>
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent
+            align="center"
+            side="top"
+            sideOffset={10}
+            className="w-56 rounded-lg"
+          >
+            <DropdownMenuLabel>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">{userName}</span>
+                <span className="text-xs text-muted-foreground">
+                  {userEmail}
+                </span>
+              </div>
+            </DropdownMenuLabel>
+
+            <DropdownMenuSeparator />
+
+            <DropdownMenuItem asChild>
+              <div className="flex items-center gap-2 text-destructive cursor-pointer">
+                <LogOut size={16} />
+                <Logout>Sign out</Logout>
+              </div>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </SidebarFooter>
     </Sidebar>
   );
