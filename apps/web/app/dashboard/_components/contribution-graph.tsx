@@ -85,7 +85,7 @@ export const THEMES: HeatmapTheme[] = [
     name: "Rose",
     emoji: "🌹",
     light: ["#ebedf0", "#ffc0cb", "#ff85a1", "#ff4d6d", "#c9184a"],
-    dark: ["#2d333b", "#4c0519", "#881337", "#e11d48", "#fb7185"],
+    dark: ["#2d333b", "#881337", "#BF0D3F", "#e11d48", "#fb7185"],
     accent: "#ff4d6d",
   },
   {
@@ -93,7 +93,7 @@ export const THEMES: HeatmapTheme[] = [
     name: "Cyberpunk",
     emoji: "⚡",
     light: ["#ebedf0", "#ccffee", "#66ffcc", "#00e68a", "#00cc7a"],
-    dark: ["#1a1a2e", "#003d29", "#00805a", "#00cc8e", "#00ffb3"],
+    dark: ["#2d333b", "#006141", "#00805a", "#00cc8e", "#00ffb3"],
     accent: "#00ff99",
   },
   {
@@ -165,7 +165,7 @@ export const THEMES: HeatmapTheme[] = [
     name: "Neon",
     emoji: "💡",
     light: ["#ebedf0", "#e0f7a0", "#c6f050", "#a3e635", "#65a30d"],
-    dark: ["#1a1a2e", "#2d3a0e", "#4d6615", "#84cc16", "#bef264"],
+    dark: ["#2d333b", "#2d3a0e", "#4d6615", "#84cc16", "#bef264"],
     accent: "#84cc16",
   },
   {
@@ -189,7 +189,7 @@ export const THEMES: HeatmapTheme[] = [
     name: "Mono",
     emoji: "⚫",
     light: ["#ebedf0", "#c6c6c6", "#999999", "#666666", "#333333"],
-    dark: ["#2d333b", "#3d444d", "#5a636e", "#8b949e", "#c9d1d9"],
+    dark: ["#23282E", "#3d444d", "#5a636e", "#8b949e", "#c9d1d9"],
     accent: "#8b949e",
   },
 ];
