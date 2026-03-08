@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 import Logout from "./auth/logout";
+import Image from "next/image";
 
 export const AppSidebar = () => {
   const { theme, setTheme } = useTheme();
@@ -84,15 +85,19 @@ export const AppSidebar = () => {
   return (
     <Sidebar className="border-r border-border bg-sidebar">
       <SidebarHeader className="border-b border-border/50 h-16 flex items-center px-4">
-        <div className="flex items-center gap-3 w-full">
-          <div className="flex items-center justify-center w-8 h-8 rounded-md bg-primary text-primary-foreground shadow-sm shrink-0">
-            <Building className="w-4 h-4" />
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-white flex transform transition-transform hover:rotate-3 p-1">
+            <Image
+              src="/code-logo-bg.png"
+              alt="CodeUnicorn Logo"
+              width={100}
+              height={100}
+              className="w-full h-full object-cover"
+            />
           </div>
-          <div className="flex flex-col flex-1 min-w-0">
-            <span className="text-sm font-semibold tracking-tight text-sidebar-foreground truncate">
-              CodeUnicorn
-            </span>
-          </div>
+          <h1 className="text-lg font-bold tracking-tight text-white/90">
+            CodeUnicorn
+          </h1>
         </div>
       </SidebarHeader>
 

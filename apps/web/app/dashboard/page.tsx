@@ -676,7 +676,7 @@ const MainPage = () => {
               <span className="text-3xl font-bold">
                 {isLoading ? "..." : stats?.totalCommits?.toLocaleString() || 0}
               </span>
-              {commitsDelta !== null && (
+              {/* {commitsDelta !== null && (
                 <Badge
                   variant="secondary"
                   className={`text-xs gap-1 ${
@@ -693,7 +693,7 @@ const MainPage = () => {
                   {commitsDelta.up ? "+" : ""}
                   {commitsDelta.pct}% this month
                 </Badge>
-              )}
+              )} */}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               In the last year
