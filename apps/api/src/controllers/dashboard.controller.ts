@@ -2,27 +2,7 @@ import { Request, Response } from "express";
 import { AuthRequest } from "../middleware/auth.middleware";
 import * as dashboardService from "../services/dashboard.service";
 
-export async function getCodeQualityTrends(req: AuthRequest, res: Response) {
-  try {
-    const userId = req.user!.id;
-    const data = await dashboardService.getCodeQualityTrends(userId);
-    res.json({ success: true, data });
-  } catch (error) {
-    console.error("Error fetching code quality trends:", error);
-    res.status(500).json({ success: false, error: "Failed to fetch code quality trends" });
-  }
-}
 
-export async function getRepositoryHealthScores(req: AuthRequest, res: Response) {
-  try {
-    const userId = req.user!.id;
-    const data = await dashboardService.getRepositoryHealthScores(userId);
-    res.json({ success: true, data });
-  } catch (error) {
-    console.error("Error fetching repository health scores:", error);
-    res.status(500).json({ success: false, error: "Failed to fetch repository health scores" });
-  }
-}
 
 export async function getDeveloperMetrics(req: AuthRequest, res: Response) {
   try {

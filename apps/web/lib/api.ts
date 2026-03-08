@@ -68,40 +68,11 @@ export async function getMonthlyActivity() {
   return res.data || [];
 }
 
-export interface CodeQualityWeek {
-  label: string;
-  security: number;
-  performance: number;
-  style: number;
-  correctness: number;
-  reviewCount: number;
-}
-
-export async function getCodeQualityTrends(): Promise<CodeQualityWeek[]> {
-  const res = await fetchApi<CodeQualityWeek[]>("/api/dashboard/code-quality");
-  return res.data || [];
-}
-
-export interface RepoHealthScore {
-  repoId: string;
-  name: string;
-  fullName: string;
-  healthScore: number;
-  docCoverage: number;
-  reviewFrequency: number;
-  reviewQuality: number;
-  configActive: boolean;
-  totalReviews: number;
-}
-
-export async function getRepositoryHealthScores(): Promise<RepoHealthScore[]> {
-  const res = await fetchApi<RepoHealthScore[]>("/api/dashboard/repo-health");
-  return res.data || [];
-}
-
 export interface DeveloperMetrics {
   prsThisMonth: number;
   prsLastMonth: number;
+  commitsThisMonth: number;
+  commitsLastMonth: number;
   reviewsTriggered: number;
   avgIssuesPerReview: number;
   topIssueCategories: Array<{ category: string; count: number }>;
@@ -109,6 +80,14 @@ export interface DeveloperMetrics {
   totalReviewsAllTime: number;
   githubLogin: string;
   avatarUrl: string;
+  // Commit analytics
+  monthlyCommits: Array<{ month: string; year: string; commits: number }>;
+  mostActiveMonth: string | null;
+  mostActiveMonthCount: number;
+  currentStreak: number;
+  longestStreak: number;
+  weekdayActivity: Array<{ day: string; commits: number }>;
+  mostActiveDay: string | null;
 }
 
 export async function getDeveloperMetrics(): Promise<DeveloperMetrics | null> {

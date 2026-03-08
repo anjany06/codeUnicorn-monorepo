@@ -10,11 +10,6 @@ dashboardRouter.get("/stats", authMiddleware, dashboardController.getStats);
 // GET /api/dashboard/activity
 dashboardRouter.get("/activity", authMiddleware, dashboardController.getMonthlyActivity);
 
-// GET /api/dashboard/code-quality  – weekly code-quality trends by finding category
-dashboardRouter.get("/code-quality", authMiddleware, dashboardController.getCodeQualityTrends);
-
-// GET /api/dashboard/repo-health  – per-repo health scores
-dashboardRouter.get("/repo-health", authMiddleware, dashboardController.getRepositoryHealthScores);
 
 // GET /api/dashboard/developer-metrics  – current-user developer stats
 dashboardRouter.get("/developer-metrics", authMiddleware, dashboardController.getDeveloperMetrics);

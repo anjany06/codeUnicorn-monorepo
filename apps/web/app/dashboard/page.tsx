@@ -11,6 +11,7 @@ import {
   GitPullRequest,
   GitBranch,
   TrendingUp,
+  TrendingDown,
   Activity,
   Zap,
   ArrowUpRight,
@@ -32,15 +33,11 @@ import { useQuery } from "@tanstack/react-query";
 import {
   getDashboardStats,
   getMonthlyActivity,
-  getCodeQualityTrends,
-  getRepositoryHealthScores,
   getDeveloperMetrics,
   getContributionData,
 } from "@/lib/api";
 import { useSession } from "@/lib/auth-client";
 import { IssueActivityFeed } from "./_components/issue-activity";
-import { CodeQualityTrends } from "./_components/code-quality-trends";
-import { RepoHealthCard } from "./_components/repo-health-card";
 import { DeveloperMetrics } from "./_components/developer-metrics";
 
 import { ContributionGraph } from "./_components/contribution-graph";
@@ -556,20 +553,6 @@ const MainPage = () => {
     refetchOnWindowFocus: false,
   });
 
-  const { data: codeQualityData = [], isLoading: isLoadingCodeQuality } =
-    useQuery({
-      queryKey: ["code-quality-trends"],
-      queryFn: getCodeQualityTrends,
-      refetchOnWindowFocus: false,
-    });
-
-  const { data: repoHealthData = [], isLoading: isLoadingRepoHealth } =
-    useQuery({
-      queryKey: ["repo-health-scores"],
-      queryFn: getRepositoryHealthScores,
-      refetchOnWindowFocus: false,
-    });
-
   const {
     data: developerMetrics = null,
     isLoading: isLoadingDeveloperMetrics,
@@ -587,14 +570,22 @@ const MainPage = () => {
       refetchOnWindowFocus: false,
     });
 
-  const percentageChanges = useMemo(() => {
-    return {
-      repos: 12,
-      commits: 8,
-      prs: 15,
-      reviews: 5,
-    };
-  }, []);
+  // Real month-over-month changes derived from developer metrics
+  const commitsDelta = useMemo(() => {
+    const cur = developerMetrics?.commitsThisMonth ?? 0;
+    const prev = developerMetrics?.commitsLastMonth ?? 0;
+    if (prev === 0) return null;
+    const pct = Math.round(((cur - prev) / prev) * 100);
+    return { pct, up: pct >= 0 };
+  }, [developerMetrics]);
+
+  const prsDelta = useMemo(() => {
+    const cur = developerMetrics?.prsThisMonth ?? 0;
+    const prev = developerMetrics?.prsLastMonth ?? 0;
+    if (prev === 0) return null;
+    const pct = Math.round(((cur - prev) / prev) * 100);
+    return { pct, up: pct >= 0 };
+  }, [developerMetrics]);
 
   const [barChartKey, setBarChartKey] = useState(0);
   const [areaChartKey, setAreaChartKey] = useState(0);
@@ -651,15 +642,21 @@ const MainPage = () => {
               </span>
               <Badge
                 variant="secondary"
-                className="text-xs gap-1 text-emerald-600 bg-emerald-500/10"
+                className="text-xs gap-1 text-blue-600 bg-blue-500/10"
               >
-                <ArrowUpRight className="h-3 w-3" />+{percentageChanges.repos}%
+                <GitBranch className="h-3 w-3" />
+                {stats?.totalRepos === 1
+                  ? "1 repo"
+                  : `${stats?.totalRepos ?? 0} repos`}
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               Connected repositories
             </p>
-            <Progress value={75} className="h-1 mt-3" />
+            <Progress
+              value={Math.min(((stats?.totalRepos ?? 0) / 20) * 100, 100)}
+              className="h-1 mt-3"
+            />
           </CardContent>
         </Card>
 
@@ -679,17 +676,32 @@ const MainPage = () => {
               <span className="text-3xl font-bold">
                 {isLoading ? "..." : stats?.totalCommits?.toLocaleString() || 0}
               </span>
-              <Badge
-                variant="secondary"
-                className="text-xs gap-1 text-emerald-600 bg-emerald-500/10"
-              >
-                <TrendingUp className="h-3 w-3" />+{percentageChanges.commits}%
-              </Badge>
+              {commitsDelta !== null && (
+                <Badge
+                  variant="secondary"
+                  className={`text-xs gap-1 ${
+                    commitsDelta.up
+                      ? "text-emerald-600 bg-emerald-500/10"
+                      : "text-red-600 bg-red-500/10"
+                  }`}
+                >
+                  {commitsDelta.up ? (
+                    <TrendingUp className="h-3 w-3" />
+                  ) : (
+                    <TrendingDown className="h-3 w-3" />
+                  )}
+                  {commitsDelta.up ? "+" : ""}
+                  {commitsDelta.pct}% this month
+                </Badge>
+              )}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               In the last year
             </p>
-            <Progress value={85} className="h-1 mt-3" />
+            <Progress
+              value={Math.min(((stats?.totalCommits ?? 0) / 3000) * 100, 100)}
+              className="h-1 mt-3"
+            />
           </CardContent>
         </Card>
 
@@ -709,17 +721,32 @@ const MainPage = () => {
               <span className="text-3xl font-bold">
                 {isLoading ? "..." : stats?.totalPRs || 0}
               </span>
-              <Badge
-                variant="secondary"
-                className="text-xs gap-1 text-emerald-600 bg-emerald-500/10"
-              >
-                <ArrowUpRight className="h-3 w-3" />+{percentageChanges.prs}%
-              </Badge>
+              {prsDelta !== null && (
+                <Badge
+                  variant="secondary"
+                  className={`text-xs gap-1 ${
+                    prsDelta.up
+                      ? "text-emerald-600 bg-emerald-500/10"
+                      : "text-red-600 bg-red-500/10"
+                  }`}
+                >
+                  {prsDelta.up ? (
+                    <ArrowUpRight className="h-3 w-3" />
+                  ) : (
+                    <TrendingDown className="h-3 w-3" />
+                  )}
+                  {prsDelta.up ? "+" : ""}
+                  {prsDelta.pct}% this month
+                </Badge>
+              )}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               All time contributions
             </p>
-            <Progress value={60} className="h-1 mt-3" />
+            <Progress
+              value={Math.min(((stats?.totalPRs ?? 0) / 500) * 100, 100)}
+              className="h-1 mt-3"
+            />
           </CardContent>
         </Card>
 
@@ -750,7 +777,10 @@ const MainPage = () => {
             <p className="text-xs text-muted-foreground mt-1">
               AI Generated Reviews
             </p>
-            <Progress value={45} className="h-1 mt-3" />
+            <Progress
+              value={Math.min(((stats?.totalReviews ?? 0) / 200) * 100, 100)}
+              className="h-1 mt-3"
+            />
           </CardContent>
         </Card>
       </div>
@@ -1040,9 +1070,6 @@ const MainPage = () => {
         </CardContent>
       </Card>
 
-      {/* Issue Intelligence activity feed */}
-      <IssueActivityFeed />
-
       {/* ── Contribution Graph ────────────────────────────────────────── */}
       <ContributionGraph
         data={contributionData}
@@ -1052,20 +1079,14 @@ const MainPage = () => {
 
       {/* ── Analytics sections ─────────────────────────────────────────── */}
 
-      {/* Repository Health Scores */}
-      <RepoHealthCard data={repoHealthData} isLoading={isLoadingRepoHealth} />
-
-      {/* Code Quality Trends */}
-      <CodeQualityTrends
-        data={codeQualityData}
-        isLoading={isLoadingCodeQuality}
-      />
-
       {/* Developer Insights */}
       <DeveloperMetrics
         data={developerMetrics}
         isLoading={isLoadingDeveloperMetrics}
       />
+
+      {/* Issue Intelligence activity feed */}
+      <IssueActivityFeed />
     </div>
   );
 };

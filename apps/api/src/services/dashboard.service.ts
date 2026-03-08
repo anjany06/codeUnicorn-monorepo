@@ -276,104 +276,7 @@ export function parseReviewFindings(text: string): {
 
 // ─── Code Quality Trends ─────────────────────────────────────────────────────
 
-export async function getCodeQualityTrends(userId: string) {
-  try {
-    const reviews = await prisma.review.findMany({
-      where: { repository: { userId } },
-      orderBy: { createdAt: "desc" },
-      take: 60,
-      select: { review: true, createdAt: true, prTitle: true, repository: { select: { name: true } } },
-    });
 
-    // Build last-8-week buckets
-    const now = new Date();
-    const weekBuckets: Record<string, { label: string; security: number; performance: number; style: number; correctness: number; reviewCount: number }> = {};
-
-    for (let i = 7; i >= 0; i--) {
-      const d = new Date(now);
-      d.setDate(d.getDate() - i * 7);
-      const key = `W${String(Math.ceil(d.getDate() / 7)).padStart(2, "0")}-${d.toLocaleString("en", { month: "short" })}`;
-      weekBuckets[key] = { label: key, security: 0, performance: 0, style: 0, correctness: 0, reviewCount: 0 };
-    }
-
-    const keys = Object.keys(weekBuckets);
-
-    for (const r of reviews) {
-      const d = new Date(r.createdAt);
-      const msSince = now.getTime() - d.getTime();
-      const weekIndex = Math.floor(msSince / (7 * 24 * 60 * 60 * 1000));
-      if (weekIndex < 0 || weekIndex >= keys.length) continue;
-      const bucketKey = keys[keys.length - 1 - weekIndex];
-      const findings = parseReviewFindings(r.review);
-      weekBuckets[bucketKey].security += findings.security;
-      weekBuckets[bucketKey].performance += findings.performance;
-      weekBuckets[bucketKey].style += findings.style;
-      weekBuckets[bucketKey].correctness += findings.correctness;
-      weekBuckets[bucketKey].reviewCount++;
-    }
-
-    return Object.values(weekBuckets);
-  } catch (error) {
-    console.error("Error fetching code quality trends:", error);
-    return [];
-  }
-}
-
-// ─── Repository Health Scores ─────────────────────────────────────────────────
-
-export async function getRepositoryHealthScores(userId: string) {
-  try {
-    const repos = await prisma.repository.findMany({
-      where: { userId },
-      select: { id: true, name: true, fullName: true },
-    });
-
-    const now = new Date();
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-
-    const results = await Promise.all(
-      repos.map(async (repo) => {
-        const [docCount, recentReviews, allReviews, config] = await Promise.all([
-          prisma.generatedDoc.count({ where: { repositoryId: repo.id, status: "completed" } }),
-          prisma.review.count({ where: { repositoryId: repo.id, createdAt: { gte: thirtyDaysAgo } } }),
-          prisma.review.findMany({ where: { repositoryId: repo.id }, select: { review: true }, take: 10, orderBy: { createdAt: "desc" } }),
-          prisma.reviewConfig.findUnique({ where: { repositoryId: repo.id }, select: { enabled: true } }),
-        ]);
-
-        // Pillar scores (each 0–25)
-        const docCoverage = Math.round((Math.min(docCount, 4) / 4) * 25);
-        const reviewFrequency = Math.round((Math.min(recentReviews, 5) / 5) * 25);
-        const configActive = config?.enabled ? 25 : 0;
-
-        let avgFindings = 0;
-        if (allReviews.length > 0) {
-          const totalFindings = allReviews.reduce((sum, r) => sum + parseReviewFindings(r.review).total, 0);
-          avgFindings = totalFindings / allReviews.length;
-        }
-        const reviewQuality = Math.max(0, Math.round(25 - Math.min(avgFindings / 2, 25)));
-
-        const healthScore = docCoverage + reviewFrequency + reviewQuality + configActive;
-
-        return {
-          repoId: repo.id,
-          name: repo.name,
-          fullName: repo.fullName,
-          healthScore,
-          docCoverage,
-          reviewFrequency,
-          reviewQuality,
-          configActive,
-          totalReviews: allReviews.length,
-        };
-      })
-    );
-
-    return results.sort((a, b) => b.healthScore - a.healthScore);
-  } catch (error) {
-    console.error("Error fetching repository health scores:", error);
-    return [];
-  }
-}
 
 // ─── Developer Metrics ────────────────────────────────────────────────────────
 
@@ -387,8 +290,8 @@ export async function getDeveloperMetrics(userId: string) {
     const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
-    // PRs this month vs last month
-    const [thisPRs, lastPRs] = await Promise.all([
+    // PRs this month vs last month + contribution calendar (all in parallel)
+    const [thisPRs, lastPRs, calendar] = await Promise.all([
       octokit.rest.search.issuesAndPullRequests({
         q: `author:${ghUser.login} type:pr created:>=${thisMonthStart.toISOString().split("T")[0]}`,
         per_page: 1,
@@ -397,10 +300,109 @@ export async function getDeveloperMetrics(userId: string) {
         q: `author:${ghUser.login} type:pr created:${lastMonthStart.toISOString().split("T")[0]}..${new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split("T")[0]}`,
         per_page: 1,
       }),
+      fetchUserContribution(token, ghUser.login),
     ]);
 
     const prsThisMonth = thisPRs.data.total_count;
     const prsLastMonth = lastPRs.data.total_count;
+
+    // ── Monthly commits (last 12 months) + streaks from contribution calendar ──
+    const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+
+    // Build 12-month bucket keys in order
+    const monthBucketKeys: string[] = [];
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      monthBucketKeys.push(`${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`);
+    }
+    const monthlyCommitsMap: Record<string, number> = {};
+    monthBucketKeys.forEach((k) => { monthlyCommitsMap[k] = 0; });
+
+    // Weekday buckets (Sun=0 … Sat=6)
+    const WEEKDAY_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+    const weekdayMap: Record<string, number> = {};
+    WEEKDAY_NAMES.forEach((d) => { weekdayMap[d] = 0; });
+
+    // Current-month and last-month commit counts
+    const currentMonthKey = `${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`;
+    const lastMonthKey = `${MONTH_NAMES[lastMonthStart.getMonth()]} ${lastMonthStart.getFullYear()}`;
+
+    // Flatten all contribution days and compute streaks
+    type CalDay = { date: string; contributionCount: number };
+    const allDays: CalDay[] = calendar
+      ? calendar.weeks.flatMap((w: any) => w.contributionDays as CalDay[])
+      : [];
+    allDays.sort((a, b) => a.date.localeCompare(b.date));
+
+    // Aggregate monthly + weekday
+    const todayStr = now.toISOString().split("T")[0];
+    for (const day of allDays) {
+      if (day.date > todayStr) continue;
+      const d = new Date(day.date);
+      if (d >= twelveMonthsAgo) {
+        const key = `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
+        if (monthlyCommitsMap[key] !== undefined) {
+          monthlyCommitsMap[key] += day.contributionCount;
+        }
+        weekdayMap[WEEKDAY_NAMES[d.getDay()]] += day.contributionCount;
+      }
+    }
+
+    // Current streak (consecutive days with contributions ending today/yesterday)
+    let currentStreak = 0;
+    for (let i = allDays.length - 1; i >= 0; i--) {
+      const day = allDays[i];
+      if (day.date > todayStr) continue;
+      if (day.contributionCount > 0) {
+        currentStreak++;
+      } else {
+        break;
+      }
+    }
+
+    // Longest streak
+    let longestStreak = 0;
+    let tempStreak = 0;
+    for (const day of allDays) {
+      if (day.date > todayStr) continue;
+      if (day.contributionCount > 0) {
+        tempStreak++;
+        if (tempStreak > longestStreak) longestStreak = tempStreak;
+      } else {
+        tempStreak = 0;
+      }
+    }
+
+    // Monthly commits array (short month label for chart)
+    const monthlyCommits = monthBucketKeys.map((key) => ({
+      month: key.split(" ")[0],
+      year: key.split(" ")[1],
+      commits: monthlyCommitsMap[key] || 0,
+    }));
+
+    // Most active month
+    const mostActiveMonthEntry = monthlyCommits.reduce(
+      (best, cur) => (cur.commits > best.commits ? cur : best),
+      monthlyCommits[0] ?? { month: null, year: null, commits: 0 },
+    );
+    const mostActiveMonth = mostActiveMonthEntry.commits > 0
+      ? `${mostActiveMonthEntry.month} ${mostActiveMonthEntry.year}`
+      : null;
+    const mostActiveMonthCount = mostActiveMonthEntry.commits;
+
+    // Weekday activity array
+    const weekdayActivity = WEEKDAY_NAMES.map((day) => ({
+      day,
+      commits: weekdayMap[day],
+    }));
+    const mostActiveDayEntry = weekdayActivity.reduce(
+      (best, cur) => (cur.commits > best.commits ? cur : best),
+      weekdayActivity[0],
+    );
+
+    const commitsThisMonth = monthlyCommitsMap[currentMonthKey] || 0;
+    const commitsLastMonth = monthlyCommitsMap[lastMonthKey] || 0;
 
     // Reviews triggered in last 30 days
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -446,6 +448,8 @@ export async function getDeveloperMetrics(userId: string) {
     return {
       prsThisMonth,
       prsLastMonth,
+      commitsThisMonth,
+      commitsLastMonth,
       reviewsTriggered: recentReviews.length,
       avgIssuesPerReview,
       topIssueCategories,
@@ -453,6 +457,14 @@ export async function getDeveloperMetrics(userId: string) {
       totalReviewsAllTime,
       githubLogin: ghUser.login,
       avatarUrl: ghUser.avatar_url,
+      // Commit analytics
+      monthlyCommits,
+      mostActiveMonth,
+      mostActiveMonthCount,
+      currentStreak,
+      longestStreak,
+      weekdayActivity,
+      mostActiveDay: mostActiveDayEntry?.day ?? null,
     };
   } catch (error) {
     console.error("Error fetching developer metrics:", error);
