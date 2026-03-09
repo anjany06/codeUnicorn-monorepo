@@ -290,8 +290,13 @@ export async function getDeveloperMetrics(userId: string) {
     const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
-    // PRs this month vs last month + contribution calendar (all in parallel)
-    const [thisPRs, lastPRs, calendar] = await Promise.all([
+    // ── Monthly commits (last 12 months) + streaks from contribution calendar ──
+    const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+    const twelveMonthsAgoStr = twelveMonthsAgo.toISOString().split("T")[0];
+
+    // PRs this month vs last month + contribution calendar + last-12-month PRs (all in parallel)
+    const [thisPRs, lastPRs, calendar, allYearPRs] = await Promise.all([
       octokit.rest.search.issuesAndPullRequests({
         q: `author:${ghUser.login} type:pr created:>=${thisMonthStart.toISOString().split("T")[0]}`,
         per_page: 1,
@@ -301,14 +306,16 @@ export async function getDeveloperMetrics(userId: string) {
         per_page: 1,
       }),
       fetchUserContribution(token, ghUser.login),
+      octokit.rest.search.issuesAndPullRequests({
+        q: `author:${ghUser.login} type:pr created:>=${twelveMonthsAgoStr}`,
+        per_page: 100,
+        sort: "created",
+        order: "asc",
+      }),
     ]);
 
     const prsThisMonth = thisPRs.data.total_count;
     const prsLastMonth = lastPRs.data.total_count;
-
-    // ── Monthly commits (last 12 months) + streaks from contribution calendar ──
-    const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1);
 
     // Build 12-month bucket keys in order
     const monthBucketKeys: string[] = [];
@@ -373,6 +380,20 @@ export async function getDeveloperMetrics(userId: string) {
         tempStreak = 0;
       }
     }
+
+    // Monthly PR array (bucket the 100 fetched PRs by month)
+    const monthlyPRsMap: Record<string, number> = {};
+    monthBucketKeys.forEach((k) => { monthlyPRsMap[k] = 0; });
+    for (const pr of allYearPRs.data.items) {
+      const d = new Date(pr.created_at);
+      const key = `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
+      if (monthlyPRsMap[key] !== undefined) monthlyPRsMap[key]++;
+    }
+    const monthlyPRs = monthBucketKeys.map((key) => ({
+      month: key.split(" ")[0],
+      year: key.split(" ")[1],
+      prs: monthlyPRsMap[key] || 0,
+    }));
 
     // Monthly commits array (short month label for chart)
     const monthlyCommits = monthBucketKeys.map((key) => ({
@@ -459,6 +480,7 @@ export async function getDeveloperMetrics(userId: string) {
       avatarUrl: ghUser.avatar_url,
       // Commit analytics
       monthlyCommits,
+      monthlyPRs,
       mostActiveMonth,
       mostActiveMonthCount,
       currentStreak,

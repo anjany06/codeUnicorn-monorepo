@@ -157,7 +157,7 @@ export const THEMES: HeatmapTheme[] = [
     name: "Forest",
     emoji: "🌲",
     light: ["#ebedf0", "#b5e2b0", "#7bc47a", "#3a9d3a", "#1a6b1a"],
-    dark: ["#2d333b", "#0b3d0b", "#1a6b1a", "#2e9e2e", "#5ccf5c"],
+    dark: ["#2d333b", "#0D4A0D", "#1a6b1a", "#2e9e2e", "#5ccf5c"],
     accent: "#2e9e2e",
   },
   {
@@ -165,7 +165,7 @@ export const THEMES: HeatmapTheme[] = [
     name: "Neon",
     emoji: "💡",
     light: ["#ebedf0", "#e0f7a0", "#c6f050", "#a3e635", "#65a30d"],
-    dark: ["#2d333b", "#2d3a0e", "#4d6615", "#84cc16", "#bef264"],
+    dark: ["#2d333b", "#31400F", "#4d6615", "#84cc16", "#bef264"],
     accent: "#84cc16",
   },
   {
@@ -181,7 +181,7 @@ export const THEMES: HeatmapTheme[] = [
     name: "Peach",
     emoji: "🍑",
     light: ["#ebedf0", "#ffe0cc", "#ffb899", "#ff8c66", "#e65c2e"],
-    dark: ["#2d333b", "#4a1e08", "#7a3418", "#c75b30", "#ff8c66"],
+    dark: ["#2d333b", "#66290B", "#7a3418", "#c75b30", "#ff8c66"],
     accent: "#ff8c66",
   },
   {

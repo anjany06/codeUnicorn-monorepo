@@ -95,25 +95,29 @@ export const AppSidebar = () => {
   return (
     <Sidebar
       collapsible="icon"
-      style={{ "--sidebar-width-icon": "4rem" } as React.CSSProperties}
+      style={{ "--sidebar-width-icon": "5rem" } as React.CSSProperties}
       className="h-screen flex flex-col overflow-hidden border-r border-border/60 bg-muted/20 backdrop-blur-sm"
     >
       {/* HEADER */}
 
       <SidebarHeader className="h-16 flex items-center border-b border-border/40 shrink-0 px-3">
         <div className="flex items-center gap-3 w-full">
-          <div className="h-9 w-9 rounded-lg bg-white border border-border flex items-center justify-center shrink-0 overflow-hidden">
+          <div
+            className={`h-10 w-10 rounded-lg bg-white border border-border flex items-center justify-center shrink-0 overflow-hidden transition-all duration-300 ease-in-out ${
+              isCollapsed ? "max-w-9" : "max-w-10 opacity-100"
+            }`}
+          >
             <Image
               src="/code-logo-bg.png"
               alt="CodeUnicorn"
-              width={28}
-              height={28}
+              width={100}
+              height={100}
               className="object-contain"
             />
           </div>
 
           <span
-            className={`font-semibold text-sm tracking-tight whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${
+            className={`font-semibold text-lg dark:text-white text-black whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${
               isCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"
             }`}
           >
@@ -131,7 +135,7 @@ export const AppSidebar = () => {
           <SidebarGroupLabel
             className={`px-2 text-[11px] uppercase tracking-wider text-muted-foreground whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${
               isCollapsed
-                ? "max-h-0 opacity-0 py-0 mb-0"
+                ? "opacity-0"
                 : "max-h-10 opacity-100"
             }`}
           >
@@ -146,7 +150,7 @@ export const AppSidebar = () => {
                     asChild
                     tooltip={item.title}
                     className={`h-10 rounded-lg transition-all duration-300 relative flex items-center ${
-                      isCollapsed ? "justify-center px-1" : "px-2 gap-3"
+                      isCollapsed ? "px-2": "px-2 gap-3"
                     } ${
                       isActive(item.url)
                         ? "bg-accent text-accent-foreground"
@@ -159,9 +163,9 @@ export const AppSidebar = () => {
                         isCollapsed ? "justify-center" : "gap-3"
                       }`}
                     >
-                      {isActive(item.url) && !isCollapsed && (
+                      {/* {isActive(item.url) && !isCollapsed && (
                         <span className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r bg-primary" />
-                      )}
+                      )} */}
 
                       <div
                         className={`flex items-center justify-center w-8 h-8 rounded-md shrink-0 transition-colors duration-200 ${
@@ -211,7 +215,7 @@ export const AppSidebar = () => {
                     asChild
                     tooltip={item.title}
                     className={`h-10 rounded-lg transition-all duration-300 flex items-center ${
-                      isCollapsed ? "justify-center px-1" : "px-2 gap-3"
+                      isCollapsed ? "justify-center px-2" : "px-2 gap-3"
                     } ${
                       isActive(item.url)
                         ? "bg-accent text-accent-foreground"
@@ -249,7 +253,7 @@ export const AppSidebar = () => {
                   onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                   tooltip={theme === "dark" ? "Light Mode" : "Dark Mode"}
                   className={`h-10 rounded-lg transition-all duration-300 flex items-center text-muted-foreground hover:bg-accent/60 hover:text-foreground ${
-                    isCollapsed ? "justify-center px-1" : "px-2 gap-3"
+                    isCollapsed ? "justify-center px-2" : "px-2 gap-3"
                   }`}
                 >
                   <div className="flex items-center justify-center w-8 h-8 rounded-md shrink-0 bg-muted">

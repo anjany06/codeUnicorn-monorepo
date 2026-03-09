@@ -82,6 +82,7 @@ export interface DeveloperMetrics {
   avatarUrl: string;
   // Commit analytics
   monthlyCommits: Array<{ month: string; year: string; commits: number }>;
+  monthlyPRs: Array<{ month: string; year: string; prs: number }>;
   mostActiveMonth: string | null;
   mostActiveMonthCount: number;
   currentStreak: number;

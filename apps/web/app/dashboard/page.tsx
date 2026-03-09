@@ -625,14 +625,35 @@ const MainPage = () => {
       {/* Stats Grid - Modern Glass Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {/* Repositories Card */}
-        <Card className="relative overflow-hidden border-border/50 bg-gradient-to-br from-card to-card/50 backdrop-blur-xl group hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300">
-          <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-blue-500/20 transition-all duration-300" />
+        <Card
+          className="relative overflow-hidden border-border/50 bg-linear-to-br from-card to-card/50 group transition-shadow duration-300 hover:shadow-lg"
+          style={{
+            boxShadow:
+              "0 1px 0 0 rgba(255,255,255,0.06) inset, 0 4px 20px -4px rgba(0,0,0,0.25), 0 1px 4px rgba(0,0,0,0.1)",
+          }}
+        >
+          <div
+            className="absolute inset-x-0 top-0 h-px"
+            style={{
+              background:
+                "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.1) 40%, rgba(255,255,255,0.1) 60%, transparent 100%)",
+            }}
+          />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Repositories
             </CardTitle>
-            <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-              <GitBranch className="h-4 w-4 text-blue-500" />
+            <div
+              className="h-9 w-9 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform duration-300"
+              style={{
+                background:
+                  "linear-gradient(135deg, hsl(var(--muted)) 0%, hsl(var(--card)) 100%)",
+                boxShadow:
+                  "0 1px 0 rgba(255,255,255,0.08) inset, 0 2px 4px rgba(0,0,0,0.15)",
+                border: "1px solid hsl(var(--border))",
+              }}
+            >
+              <GitBranch className="h-4 w-4 text-muted-foreground" />
             </div>
           </CardHeader>
           <CardContent>
@@ -640,15 +661,6 @@ const MainPage = () => {
               <span className="text-3xl font-bold">
                 {isLoading ? "..." : stats?.totalRepos || 0}
               </span>
-              <Badge
-                variant="secondary"
-                className="text-xs gap-1 text-blue-600 bg-blue-500/10"
-              >
-                <GitBranch className="h-3 w-3" />
-                {stats?.totalRepos === 1
-                  ? "1 repo"
-                  : `${stats?.totalRepos ?? 0} repos`}
-              </Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               Connected repositories
@@ -661,14 +673,35 @@ const MainPage = () => {
         </Card>
 
         {/* Commits Card */}
-        <Card className="relative overflow-hidden border-border/50 bg-gradient-to-br from-card to-card/50 backdrop-blur-xl group hover:shadow-lg hover:shadow-emerald-500/10 transition-all duration-300">
-          <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-emerald-500/20 transition-all duration-300" />
+        <Card
+          className="relative overflow-hidden border-border/50 bg-linear-to-br from-card to-card/50 group transition-shadow duration-300 hover:shadow-lg"
+          style={{
+            boxShadow:
+              "0 1px 0 0 rgba(255,255,255,0.06) inset, 0 4px 20px -4px rgba(0,0,0,0.25), 0 1px 4px rgba(0,0,0,0.1)",
+          }}
+        >
+          <div
+            className="absolute inset-x-0 top-0 h-px"
+            style={{
+              background:
+                "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.1) 40%, rgba(255,255,255,0.1) 60%, transparent 100%)",
+            }}
+          />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Total Commits
             </CardTitle>
-            <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-              <GitCommit className="h-4 w-4 text-emerald-500" />
+            <div
+              className="h-9 w-9 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform duration-300"
+              style={{
+                background:
+                  "linear-gradient(135deg, hsl(var(--muted)) 0%, hsl(var(--card)) 100%)",
+                boxShadow:
+                  "0 1px 0 rgba(255,255,255,0.08) inset, 0 2px 4px rgba(0,0,0,0.15)",
+                border: "1px solid hsl(var(--border))",
+              }}
+            >
+              <GitCommit className="h-4 w-4 text-muted-foreground" />
             </div>
           </CardHeader>
           <CardContent>
@@ -676,24 +709,6 @@ const MainPage = () => {
               <span className="text-3xl font-bold">
                 {isLoading ? "..." : stats?.totalCommits?.toLocaleString() || 0}
               </span>
-              {/* {commitsDelta !== null && (
-                <Badge
-                  variant="secondary"
-                  className={`text-xs gap-1 ${
-                    commitsDelta.up
-                      ? "text-emerald-600 bg-emerald-500/10"
-                      : "text-red-600 bg-red-500/10"
-                  }`}
-                >
-                  {commitsDelta.up ? (
-                    <TrendingUp className="h-3 w-3" />
-                  ) : (
-                    <TrendingDown className="h-3 w-3" />
-                  )}
-                  {commitsDelta.up ? "+" : ""}
-                  {commitsDelta.pct}% this month
-                </Badge>
-              )} */}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               In the last year
@@ -706,14 +721,35 @@ const MainPage = () => {
         </Card>
 
         {/* Pull Requests Card */}
-        <Card className="relative overflow-hidden border-border/50 bg-gradient-to-br from-card to-card/50 backdrop-blur-xl group hover:shadow-lg hover:shadow-violet-500/10 transition-all duration-300">
-          <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-violet-500/20 transition-all duration-300" />
+        <Card
+          className="relative overflow-hidden border-border/50 bg-linear-to-br from-card to-card/50 group transition-shadow duration-300 hover:shadow-lg"
+          style={{
+            boxShadow:
+              "0 1px 0 0 rgba(255,255,255,0.06) inset, 0 4px 20px -4px rgba(0,0,0,0.25), 0 1px 4px rgba(0,0,0,0.1)",
+          }}
+        >
+          <div
+            className="absolute inset-x-0 top-0 h-px"
+            style={{
+              background:
+                "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.1) 40%, rgba(255,255,255,0.1) 60%, transparent 100%)",
+            }}
+          />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Pull Requests
             </CardTitle>
-            <div className="h-8 w-8 rounded-lg bg-violet-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-              <GitPullRequest className="h-4 w-4 text-violet-500" />
+            <div
+              className="h-9 w-9 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform duration-300"
+              style={{
+                background:
+                  "linear-gradient(135deg, hsl(var(--muted)) 0%, hsl(var(--card)) 100%)",
+                boxShadow:
+                  "0 1px 0 rgba(255,255,255,0.08) inset, 0 2px 4px rgba(0,0,0,0.15)",
+                border: "1px solid hsl(var(--border))",
+              }}
+            >
+              <GitPullRequest className="h-4 w-4 text-muted-foreground" />
             </div>
           </CardHeader>
           <CardContent>
@@ -721,24 +757,6 @@ const MainPage = () => {
               <span className="text-3xl font-bold">
                 {isLoading ? "..." : stats?.totalPRs || 0}
               </span>
-              {prsDelta !== null && (
-                <Badge
-                  variant="secondary"
-                  className={`text-xs gap-1 ${
-                    prsDelta.up
-                      ? "text-emerald-600 bg-emerald-500/10"
-                      : "text-red-600 bg-red-500/10"
-                  }`}
-                >
-                  {prsDelta.up ? (
-                    <ArrowUpRight className="h-3 w-3" />
-                  ) : (
-                    <TrendingDown className="h-3 w-3" />
-                  )}
-                  {prsDelta.up ? "+" : ""}
-                  {prsDelta.pct}% this month
-                </Badge>
-              )}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               All time contributions
@@ -751,14 +769,35 @@ const MainPage = () => {
         </Card>
 
         {/* AI Reviews Card */}
-        <Card className="relative overflow-hidden border-border/50 bg-gradient-to-br from-card to-card/50 backdrop-blur-xl group hover:shadow-lg hover:shadow-amber-500/10 transition-all duration-300">
-          <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-amber-500/20 transition-all duration-300" />
+        <Card
+          className="relative overflow-hidden border-border/50 bg-linear-to-br from-card to-card/50 group transition-shadow duration-300 hover:shadow-lg"
+          style={{
+            boxShadow:
+              "0 1px 0 0 rgba(255,255,255,0.06) inset, 0 4px 20px -4px rgba(0,0,0,0.25), 0 1px 4px rgba(0,0,0,0.1)",
+          }}
+        >
+          <div
+            className="absolute inset-x-0 top-0 h-px"
+            style={{
+              background:
+                "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.1) 40%, rgba(255,255,255,0.1) 60%, transparent 100%)",
+            }}
+          />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               AI Reviews
             </CardTitle>
-            <div className="h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-              <Zap className="h-4 w-4 text-amber-500" />
+            <div
+              className="h-9 w-9 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform duration-300"
+              style={{
+                background:
+                  "linear-gradient(135deg, hsl(var(--muted)) 0%, hsl(var(--card)) 100%)",
+                boxShadow:
+                  "0 1px 0 rgba(255,255,255,0.08) inset, 0 2px 4px rgba(0,0,0,0.15)",
+                border: "1px solid hsl(var(--border))",
+              }}
+            >
+              <Zap className="h-4 w-4 text-muted-foreground" />
             </div>
           </CardHeader>
           <CardContent>
@@ -766,13 +805,6 @@ const MainPage = () => {
               <span className="text-3xl font-bold">
                 {isLoading ? "..." : stats?.totalReviews || 0}
               </span>
-              <Badge
-                variant="secondary"
-                className="text-xs gap-1 text-emerald-600 bg-emerald-500/10"
-              >
-                <Activity className="h-3 w-3" />
-                Active
-              </Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               AI Generated Reviews
@@ -786,12 +818,12 @@ const MainPage = () => {
       </div>
 
       {/* Activity Overview with Tabs - 3D Charts */}
-      <Card className="border-border/50 bg-gradient-to-br from-card to-card/50 overflow-hidden">
+      {/* <Card className="border-border/50 bg-gradient-to-br from-card to-card/50 overflow-hidden">
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="space-y-1">
               <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-blue-500" />
+                <TrendingUp className="h-5 w-5" />
                 Activity Overview
               </CardTitle>
               <CardDescription>
@@ -810,13 +842,13 @@ const MainPage = () => {
             <TabsList className="mb-6 bg-muted/50">
               <TabsTrigger
                 value="bar"
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500/20 data-[state=active]:to-blue-500/20"
+                className="data-[state=active]:bg-emerald-500/10 data-[state=active]:text-emerald-600"
               >
                 Bar Chart
               </TabsTrigger>
               <TabsTrigger
                 value="area"
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500/20 data-[state=active]:to-blue-500/20"
+                className="data-[state=active]:bg-emerald-500/10 data-[state=active]:text-emerald-600"
               >
                 Area Chart
               </TabsTrigger>
@@ -889,7 +921,7 @@ const MainPage = () => {
                             stopOpacity={0.8}
                           />
                         </linearGradient>
-                        {/* Drop shadow filter */}
+                       
                         <filter
                           id="shadow"
                           x="-20%"
@@ -1068,7 +1100,7 @@ const MainPage = () => {
             </TabsContent>
           </Tabs>
         </CardContent>
-      </Card>
+      </Card> */}
 
       {/* ── Contribution Graph ────────────────────────────────────────── */}
       <ContributionGraph
