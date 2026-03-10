@@ -5,7 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ExternalLink, Star, Search, Github } from "lucide-react";
 import { useRepositories } from "./_hooks/use-repositories";
-import { RepositoryListSkeleton } from "./_components/repository-skeleton";
+import {
+  RepositoryListSkeleton,
+  RepositoryRowSkeletons,
+} from "./_components/repository-skeleton";
 import { useConnectRepository } from "./_hooks/use-connect-repository";
 
 interface Repository {
@@ -220,14 +223,14 @@ export default function RepositoryPage() {
               No repositories found matching your search.
             </div>
           )}
+
+          {/* Inline skeleton rows when loading next page — no gap, no extra border */}
+          {isFetchingNextPage && <RepositoryRowSkeletons count={6} />}
         </div>
       </div>
 
-      {/* Infinite Scroll */}
-
-      <div ref={observerTarget} className="py-4 flex flex-col items-center">
-        {isFetchingNextPage && <RepositoryListSkeleton />}
-
+      {/* Infinite Scroll trigger */}
+      <div ref={observerTarget} className="flex flex-col items-center w-full">
         {!hasNextPage && allRepositories.length > 0 && (
           <p className="text-sm text-muted-foreground">
             You have reached the end of the list.
