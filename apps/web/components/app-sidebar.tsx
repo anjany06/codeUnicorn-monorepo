@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Github,
   BookOpen,
@@ -13,27 +13,11 @@ import {
   Activity,
   CreditCard,
 } from "lucide-react";
-
 import { useTheme } from "next-themes";
-import { usePathname } from "next/navigation";
-import { useSession } from "@/lib/auth-client";
-
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarGroupContent,
-  useSidebar,
-} from "@/components/ui/sidebar";
-
+import { usePathname, useRouter } from "next/navigation";
+import { signOut, useSession } from "@/lib/auth-client";
+import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,17 +26,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-
 import Link from "next/link";
-import Logout from "./auth/logout";
 import Image from "next/image";
 
-export const AppSidebar = () => {
+type AppSidebarProps = {
+  collapsed: boolean;
+  mobileOpen: boolean;
+  onCloseMobile: () => void;
+};
+
+export const AppSidebar = ({
+  collapsed,
+  mobileOpen,
+  onCloseMobile,
+}: AppSidebarProps) => {
   const { theme, setTheme } = useTheme();
   const pathname = usePathname();
   const { data: session } = useSession();
-  const { state } = useSidebar();
-  const isCollapsed = state === "collapsed";
+  const router = useRouter();
 
   const [mounted, setMounted] = useState(false);
 
@@ -92,245 +83,223 @@ export const AppSidebar = () => {
     .toUpperCase()
     .slice(0, 2);
 
-  return (
-    <Sidebar
-      collapsible="icon"
-      style={{ "--sidebar-width-icon": "5rem" } as React.CSSProperties}
-      className="h-screen flex flex-col overflow-hidden border-r border-border/60 bg-muted/20 backdrop-blur-sm"
-    >
-      {/* HEADER */}
+  const navItemClass = (active: boolean) =>
+    cn(
+      "group relative flex h-11 w-full items-center rounded-xl border transition-all duration-200",
+      collapsed ? "justify-center px-1" : "justify-start gap-3 px-3",
+      active
+        ? "border-white/5 bg-white/5 text-foreground inset_0_1px_0_rgba(255,255,255,0.35)] backdrop-blur-lg"
+        : "border-transparent text-muted-foreground hover:border-white/20 hover:bg-white/8 hover:text-foreground hover:backdrop-blur-md"
+    );
 
-      <SidebarHeader className="h-16 flex items-center border-b border-border/40 shrink-0 px-3">
-        <div className="flex items-center gap-3 w-full">
-          <div
-            className={`h-10 w-10 rounded-lg bg-white border border-border flex items-center justify-center shrink-0 overflow-hidden transition-all duration-300 ease-in-out ${
-              isCollapsed ? "max-w-9" : "max-w-10 opacity-100"
-            }`}
-          >
-            <Image
-              src="/code-logo-bg.png"
-              alt="CodeUnicorn"
-              width={100}
-              height={100}
-              className="object-contain"
-            />
-          </div>
+  const labelClass = cn(
+    "overflow-hidden whitespace-nowrap text-sm font-medium transition-all duration-200",
+    collapsed
+      ? "max-w-0 -translate-x-1 opacity-0"
+      : "max-w-[170px] translate-x-0 opacity-100"
+  );
 
-          <span
-            className={`font-semibold text-lg dark:text-white text-black whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${
-              isCollapsed ? "max-w-0 opacity-0" : "max-w-[200px] opacity-100"
-            }`}
+  const sidebarBody = (
+    <div className="relative flex h-full flex-col overflow-x-hidden">
+      <div className="border-b border-border/60 p-3">
+        <div className="flex items-center justify-start">
+          <Link
+            href="/dashboard"
+            onClick={onCloseMobile}
+            className={cn(
+              "flex items-center rounded-xl border border-border/60 bg-background/85 px-2 py-2 transition-all duration-200",
+              collapsed ? "justify-center" : "gap-2.5 pr-3"
+            )}
           >
-            CodeUnicorn
-          </span>
+            <div className="flex h-10 w-10 shrink-0 items-center overflow-hidden rounded-lg border border-border/70 bg-white">
+              <Image
+                src="/code-logo-bg.png"
+                alt="CodeUnicorn"
+                width={40}
+                height={40}
+                className="h-9 w-9 object-contain"
+              />
+            </div>
+            <div className={labelClass}>
+              <p className="text-sm font-semibold text-foreground">CodeUnicorn</p>
+              <p className="text-xs text-muted-foreground">Developer Suite</p>
+            </div>
+          </Link>
         </div>
-      </SidebarHeader>
+      </div>
 
-      {/* CONTENT */}
-
-      <SidebarContent className="flex-1 px-2 py-6 space-y-8 overflow-hidden">
-        {/* GENERAL */}
-
-        <SidebarGroup>
-          <SidebarGroupLabel
-            className={`px-2 text-[11px] uppercase tracking-wider text-muted-foreground whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${
-              isCollapsed
-                ? "opacity-0"
-                : "max-h-10 opacity-100"
-            }`}
+      <nav className="flex-1 space-y-7 p-3">
+        <section className="space-y-2">
+          <p
+            className={cn(
+              "px-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground transition-all duration-200",
+              collapsed ? "max-h-0 opacity-0" : "max-h-6 opacity-100"
+            )}
           >
             General
-          </SidebarGroupLabel>
-
-          <SidebarGroupContent>
-            <SidebarMenu className="mt-2 space-y-1">
-              {navigation.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    tooltip={item.title}
-                    className={`h-10 rounded-lg transition-all duration-300 relative flex items-center ${
-                      isCollapsed ? "px-2": "px-2 gap-3"
-                    } ${
-                      isActive(item.url)
-                        ? "bg-accent text-accent-foreground"
-                        : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
-                    }`}
+          </p>
+          <ul className="space-y-1.5">
+            {navigation.map((item) => {
+              const active = isActive(item.url);
+              return (
+                <li key={item.title}>
+                  <Link
+                    href={item.url}
+                    title={collapsed ? item.title : undefined}
+                    onClick={onCloseMobile}
+                    className={navItemClass(active)}
                   >
-                    <Link
-                      href={item.url}
-                      className={`flex items-center w-full ${
-                        isCollapsed ? "justify-center" : "gap-3"
-                      }`}
+                    <span
+                      className={cn(
+                        "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-all duration-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_8px_24px_-18px_rgba(0,0,0,0.65)]",
+                        active
+                          ? "border-white/5 bg-linear-to-br from-white/6 via-white/14 to-white/8 text-foreground"
+                          : "border-white/16 bg-linear-to-br from-white/16 via-white/10 to-transparent text-muted-foreground group-hover:text-foreground"
+                      )}
                     >
-                      {/* {isActive(item.url) && !isCollapsed && (
-                        <span className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r bg-primary" />
-                      )} */}
+                      <item.icon className="h-[18px] w-[18px] shrink-0" />
+                    </span>
+                    <span className={labelClass}>{item.title}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
 
-                      <div
-                        className={`flex items-center justify-center w-8 h-8 rounded-md shrink-0 transition-colors duration-200 ${
-                          isActive(item.url)
-                            ? "bg-primary/10 text-primary"
-                            : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        <item.icon size={17} />
-                      </div>
-
-                      <span
-                        className={`text-sm whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${
-                          isCollapsed
-                            ? "max-w-0 opacity-0"
-                            : "max-w-[200px] opacity-100"
-                        }`}
-                      >
-                        {item.title}
-                      </span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {/* OTHER */}
-
-        <SidebarGroup>
-          <SidebarGroupLabel
-            className={`px-2 text-[11px] uppercase tracking-wider text-muted-foreground whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${
-              isCollapsed
-                ? "max-h-0 opacity-0 py-0 mb-0"
-                : "max-h-10 opacity-100"
-            }`}
+        <section className="space-y-2">
+          <p
+            className={cn(
+              "px-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground transition-all duration-200",
+              collapsed ? "max-h-0 opacity-0" : "max-h-6 opacity-100"
+            )}
           >
-            Other
-          </SidebarGroupLabel>
-
-          <SidebarGroupContent>
-            <SidebarMenu className="mt-2 space-y-1">
-              {secondaryNavigation.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    tooltip={item.title}
-                    className={`h-10 rounded-lg transition-all duration-300 flex items-center ${
-                      isCollapsed ? "justify-center px-2" : "px-2 gap-3"
-                    } ${
-                      isActive(item.url)
-                        ? "bg-accent text-accent-foreground"
-                        : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
-                    }`}
+            OTHER
+          </p>
+          <ul className="space-y-1.5">
+            {secondaryNavigation.map((item) => {
+              const active = isActive(item.url);
+              return (
+                <li key={item.title}>
+                  <Link
+                    href={item.url}
+                    title={collapsed ? item.title : undefined}
+                    onClick={onCloseMobile}
+                    className={navItemClass(active)}
                   >
-                    <Link
-                      href={item.url}
-                      className={`flex items-center w-full ${
-                        isCollapsed ? "justify-center" : "gap-3"
-                      }`}
+                    <span
+                      className={cn(
+                        "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-all duration-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_8px_24px_-18px_rgba(0,0,0,0.65)]",
+                        active
+                          ? "border-white/5 bg-linear-to-br from-white/6 via-white/14 to-white/8 text-foreground"
+                          : "border-white/16 bg-linear-to-br from-white/16 via-white/10 to-transparent text-muted-foreground group-hover:text-foreground"
+                      )}
                     >
-                      <div className="flex items-center justify-center w-8 h-8 rounded-md shrink-0 bg-muted text-muted-foreground">
-                        <item.icon size={17} />
-                      </div>
+                      <item.icon className="h-[18px] w-[18px] shrink-0" />
+                    </span>
+                    <span className={labelClass}>{item.title}</span>
+                  </Link>
+                </li>
+              );
+            })}
 
-                      <span
-                        className={`text-sm whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${
-                          isCollapsed
-                            ? "max-w-0 opacity-0"
-                            : "max-w-[200px] opacity-100"
-                        }`}
-                      >
-                        {item.title}
-                      </span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+            <li>
+              <button
+                type="button"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                title={collapsed ? (theme === "dark" ? "Light Mode" : "Dark Mode") : undefined}
+                className={navItemClass(false)}
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/16 bg-linear-to-br from-white/16 via-white/10 to-transparent text-muted-foreground transition-all duration-200 group-hover:text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_8px_24px_-18px_rgba(0,0,0,0.65)]">
+                  {theme === "dark" ? (
+                    <Sun className="h-[18px] w-[18px] shrink-0" />
+                  ) : (
+                    <Moon className="h-[18px] w-[18px] shrink-0" />
+                  )}
+                </span>
+                <span className={labelClass}>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
+              </button>
+            </li>
+          </ul>
+        </section>
+      </nav>
 
-              {/* THEME TOGGLE */}
-
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                  tooltip={theme === "dark" ? "Light Mode" : "Dark Mode"}
-                  className={`h-10 rounded-lg transition-all duration-300 flex items-center text-muted-foreground hover:bg-accent/60 hover:text-foreground ${
-                    isCollapsed ? "justify-center px-2" : "px-2 gap-3"
-                  }`}
-                >
-                  <div className="flex items-center justify-center w-8 h-8 rounded-md shrink-0 bg-muted">
-                    {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
-                  </div>
-
-                  <span
-                    className={`text-sm whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${
-                      isCollapsed
-                        ? "max-w-0 opacity-0"
-                        : "max-w-[200px] opacity-100"
-                    }`}
-                  >
-                    {theme === "dark" ? "Light Mode" : "Dark Mode"}
-                  </span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-
-      {/* USER CARD */}
-
-      <SidebarFooter className="border-t border-border/40 shrink-0 p-2">
+      <footer className="border-t border-border/60 p-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <div
-              className={`flex items-center gap-3 p-2 rounded-lg hover:bg-accent/60 cursor-pointer transition-all duration-300 ${
-                isCollapsed ? "justify-center" : ""
-              }`}
+            <button
+              type="button"
+              className={cn(
+                "flex w-full items-center rounded-xl border border-border/65 bg-background/75 p-2.5 transition-all duration-200 hover:border-border hover:bg-muted/60",
+                collapsed ? "justify-center" : "gap-2.5"
+              )}
             >
-              <Avatar className="h-9 w-9 rounded-lg border border-border shrink-0">
-                <AvatarImage src={userAvatar || ""} />
-                <AvatarFallback className="rounded-lg">
-                  {userInitials}
-                </AvatarFallback>
+              <Avatar className="h-9 w-9 shrink-0 rounded-lg border border-border/70">
+                <AvatarImage src={userAvatar ?? ""} />
+                <AvatarFallback className="rounded-lg">{userInitials}</AvatarFallback>
               </Avatar>
-
-              <span
-                className={`text-sm font-medium whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${
-                  isCollapsed
-                    ? "max-w-0 opacity-0"
-                    : "max-w-[200px] opacity-100"
-                }`}
-              >
-                {userName}
-              </span>
-            </div>
+              <div className={cn("text-left", labelClass)}>
+                <p className="truncate text-sm font-semibold text-foreground">{userName}</p>
+                <p className="truncate text-xs text-muted-foreground">{userEmail}</p>
+              </div>
+            </button>
           </DropdownMenuTrigger>
 
-          <DropdownMenuContent
-            align="center"
-            side="top"
-            sideOffset={10}
-            className="w-56 rounded-lg"
-          >
+          <DropdownMenuContent align="end" side="top" sideOffset={10} className="w-56 rounded-xl">
             <DropdownMenuLabel>
               <div className="flex flex-col">
                 <span className="text-sm font-medium">{userName}</span>
-                <span className="text-xs text-muted-foreground">
-                  {userEmail}
-                </span>
+                <span className="text-xs text-muted-foreground">{userEmail}</span>
               </div>
             </DropdownMenuLabel>
-
             <DropdownMenuSeparator />
-
-            <DropdownMenuItem asChild>
-              <div className="flex items-center gap-2 text-destructive cursor-pointer">
-                <LogOut size={16} />
-                <Logout>Sign out</Logout>
-              </div>
+            <DropdownMenuItem
+              className="cursor-pointer text-destructive focus:text-destructive"
+              onClick={() =>
+                signOut({
+                  fetchOptions: {
+                    onSuccess: () => router.push("/login"),
+                  },
+                })
+              }
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      </SidebarFooter>
-    </Sidebar>
+      </footer>
+    </div>
+  );
+
+  return (
+    <>
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-40 hidden overflow-x-hidden border-r border-border/60 bg-gradient-to-b from-background to-muted/20 backdrop-blur md:block",
+          "transition-[width] duration-300 ease-out",
+          collapsed ? "w-[92px]" : "w-[290px]"
+        )}
+      >
+        {sidebarBody}
+      </aside>
+
+      <div
+        className={cn(
+          "fixed inset-0 z-50 bg-black/50 backdrop-blur-[1px] transition-opacity duration-200 md:hidden",
+          mobileOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
+        )}
+        onClick={onCloseMobile}
+      />
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 w-[290px] overflow-x-hidden border-r border-zinc-800/80 bg-linear-to-b from-zinc-950 via-zinc-900 to-zinc-950 text-zinc-100 md:hidden",
+          "transition-transform duration-300 ease-out",
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        {sidebarBody}
+      </aside>
+    </>
   );
 };
