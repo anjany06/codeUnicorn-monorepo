@@ -162,7 +162,8 @@ export default function RepositoryPage() {
                   </a>
 
                   {repo.isConnected && (
-                    <span className="px-1.5 py-0.5 rounded-md bg-secondary text-secondary-foreground text-[10px] font-medium leading-none shrink-0">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-linear-to-b from-white/30 via-white/18 to-white/8 px-2.5 py-1 text-[10px] font-semibold tracking-[0.03em] text-foreground leading-none shadow-[inset_0_1px_0_rgba(255,255,255,0.55),0_10px_20px_-14px_rgba(0,0,0,0.65)] backdrop-blur-md shrink-0">
+                      <span className="h-2 w-1.5 rounded-full bg-foreground/80 " />
                       Connected
                     </span>
                   )}

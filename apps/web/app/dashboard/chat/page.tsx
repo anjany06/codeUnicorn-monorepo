@@ -379,7 +379,7 @@ export default function ChatPage() {
                 sessions.map((session: ChatSession) => (
                   <div
                     key={session.id}
-                    className={`group flex items-center gap-2 rounded-lg px-3 py-2 cursor-pointer transition-colors text-sm ${
+                    className={`group flex items-center gap-2 rounded-lg px-2 py-2 cursor-pointer transition-colors text-xs ${
                       activeSessionId === session.id
                         ? "bg-accent text-accent-foreground"
                         : "hover:bg-accent/50"
@@ -387,7 +387,7 @@ export default function ChatPage() {
                     onClick={() => handleSelectSession(session.id)}
                   >
                     <MessageSquare className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <div className="flex-1 min-w-0">
+                    <div className="w-50 md:w-55">
                       <p
                         className="truncate font-medium text-xs"
                         title={session.title}
@@ -403,13 +403,14 @@ export default function ChatPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                      className="rounded-md hover:cursor-pointer"
+                      aria-label="Delete chat session"
                       onClick={(e) => {
                         e.stopPropagation();
                         deleteSessionMutation.mutate(session.id);
                       }}
                     >
-                      <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                      <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
                     </Button>
                   </div>
                 ))
