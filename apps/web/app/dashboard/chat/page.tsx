@@ -286,7 +286,7 @@ export default function ChatPage() {
         </Button>
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-            AI Chat
+            AI Codebase Chat
           </h1>
           <p className="text-sm text-muted-foreground hidden sm:block">
             Chat with AI about your codebase using context-aware RAG

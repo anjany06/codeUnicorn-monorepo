@@ -309,7 +309,7 @@ export async function updateReviewConfig(repositoryId: string, data: Partial<Rev
 
 // ─── Feature A: Generated Docs API ─────────────────────────────────────────
 
-export type DocType = "readme" | "api-docs" | "architecture" | "onboarding";
+export type DocType = "readme" | "architecture" | "onboarding";
 
 export interface GeneratedDoc {
   id: string;

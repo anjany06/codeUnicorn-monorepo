@@ -170,7 +170,7 @@ model GeneratedDoc {
   id           String     @id @default(cuid())
   repositoryId String
   repository   Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
-  type         String // "readme" | "api-docs" | "architecture" | "onboarding"
+  type         String // "readme" | "architecture" | "onboarding"
   title        String
   content      String     @db.Text
   status       String     @default("pending") // "pending" | "completed" | "failed"

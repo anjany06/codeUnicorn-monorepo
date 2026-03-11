@@ -9,6 +9,7 @@ import {
   getGeneratedDocs,
   getGeneratedDoc,
   generateDoc,
+  getSubscriptionData,
   type GeneratedDoc,
   type DocType,
 } from "@/lib/api";
@@ -30,7 +31,6 @@ import {
 } from "@/components/ui/select";
 import {
   BookOpen,
-  Code2,
   Network,
   Users,
   RefreshCw,
@@ -44,22 +44,28 @@ import {
 function MermaidDiagram({ code }: { code: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const [svg, setSvg] = useState<string | null>(null);
-  const [error, setError] = useState(false);
+  const [invalid, setInvalid] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    setError(false);
+    setInvalid(false);
     setSvg(null);
 
     async function render() {
       try {
         const mermaid = (await import("mermaid")).default;
         mermaid.initialize({ startOnLoad: false, theme: "neutral" });
+        await mermaid.parse(code);
         const id = `mermaid-${Math.random().toString(36).slice(2)}`;
         const { svg: rendered } = await mermaid.render(id, code);
-        if (!cancelled) setSvg(rendered);
+        if (cancelled) return;
+        if (rendered.includes("Syntax error in text")) {
+          setInvalid(true);
+          return;
+        }
+        setSvg(rendered);
       } catch {
-        if (!cancelled) setError(true);
+        if (!cancelled) setInvalid(true);
       }
     }
 
@@ -69,12 +75,8 @@ function MermaidDiagram({ code }: { code: string }) {
     };
   }, [code]);
 
-  if (error) {
-    return (
-      <pre className="my-4 rounded-md overflow-x-auto px-4 py-3 text-xs font-mono whitespace-pre text-muted-foreground">
-        {code}
-      </pre>
-    );
+  if (invalid) {
+    return null;
   }
 
   if (!svg) {
@@ -105,12 +107,6 @@ const DOC_TYPES: {
     label: "README",
     description: "Project overview, setup instructions, and usage guide",
     icon: <BookOpen className="h-5 w-5" />,
-  },
-  {
-    type: "api-docs",
-    label: "API Docs",
-    description: "Documented API endpoints, functions, and interfaces",
-    icon: <Code2 className="h-5 w-5" />,
   },
   {
     type: "architecture",
@@ -162,6 +158,12 @@ export default function DocsPage() {
   const [selectedRepoId, setSelectedRepoId] = useState<string>("");
   const [activeDocType, setActiveDocType] = useState<DocType | null>(null);
   const [copied, setCopied] = useState(false);
+
+  const { data: subscriptionData } = useQuery({
+    queryKey: ["subscription-data"],
+    queryFn: getSubscriptionData,
+  });
+  const isProUser = subscriptionData?.user?.subscriptionTier === "PRO";
 
   // Load connected repos
   const { data: repos = [] } = useQuery({
@@ -290,6 +292,8 @@ export default function DocsPage() {
                 generateMutation.isPending &&
                 generateMutation.variables?.docType === type;
               const isActive = activeDocType === type;
+              const isRegenerateLocked =
+                docRecord?.status === "completed" && !isProUser;
 
               return (
                 <Card
@@ -331,7 +335,16 @@ export default function DocsPage() {
                           : "default"
                       }
                       className="w-full gap-2"
-                      disabled={isGenerating || docRecord?.status === "pending"}
+                      disabled={
+                        isGenerating ||
+                        docRecord?.status === "pending" ||
+                        isRegenerateLocked
+                      }
+                      title={
+                        isRegenerateLocked
+                          ? "Regenerate is available for Pro users only"
+                          : undefined
+                      }
                       onClick={(e) => {
                         e.stopPropagation();
                         generateMutation.mutate({ docType: type });
@@ -345,7 +358,7 @@ export default function DocsPage() {
                       ) : docRecord?.status === "completed" ? (
                         <>
                           <RefreshCw className="h-3 w-3" />
-                          Regenerate
+                          {isRegenerateLocked ? "Regenerate (Pro)" : "Regenerate"}
                         </>
                       ) : (
                         <>

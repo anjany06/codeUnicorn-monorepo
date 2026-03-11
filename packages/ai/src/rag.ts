@@ -173,12 +173,6 @@ const DOC_QUERIES: Record<string, string[]> = {
     "installation and setup steps",
     "usage examples and getting started",
   ],
-  "api-docs": [
-    "API routes and endpoint definitions",
-    "request response schemas and types",
-    "authentication and authorization middleware",
-    "error handling and status codes",
-  ],
   architecture: [
     "data flow between modules and services",
     "key services and their responsibilities",
@@ -195,9 +189,15 @@ const DOC_QUERIES: Record<string, string[]> = {
 };
 
 const DOC_PROMPTS: Record<string, string> = {
-  readme: `You are a technical writer. Generate a comprehensive, well-structured README.md for this codebase. Include: project title and description, badges (placeholder), features list, prerequisites, installation steps, usage examples, project structure overview, contributing guide, and license section. Use Markdown formatting. Include a Mermaid architecture diagram.`,
-  "api-docs": `You are a technical writer. Generate complete API documentation for this codebase. For each endpoint: include HTTP method, path, description, request body schema (with types), response schema, authentication requirements, and example request/response. Format as structured Markdown with a table of contents.`,
-  architecture: `You are a software architect. Generate an architecture document for this codebase. Include: high-level system overview, component diagram (Mermaid), description of each major module/service and its responsibilities, data flow diagrams (Mermaid sequence diagrams), database schema overview, and key design decisions.`,
+  readme: `You are a technical writer. Generate a comprehensive, well-structured README.md for this codebase. Include: project title and description, badges (placeholder), features list, prerequisites, installation steps, usage examples, project structure overview, contributing guide, and license section. Use Markdown formatting. Include at most one Mermaid architecture diagram in a fenced code block. Only output Mermaid code that is syntactically valid.`,
+  architecture: `You are a software architect. Generate an architecture document for this codebase. Include: high-level system overview, component diagram (Mermaid), description of each major module/service and its responsibilities, data flow diagrams (Mermaid sequence diagrams), database schema overview, and key design decisions.
+
+Mermaid requirements:
+- Use fenced blocks with \`\`\`mermaid.
+- Keep syntax simple and valid for Mermaid v11.
+- Prefer graph TD/LR and sequenceDiagram with basic constructs only.
+- Do not include malformed arrows, unmatched brackets, HTML, or markdown inside Mermaid blocks.
+- If unsure, skip the Mermaid block instead of outputting invalid syntax.`,
   onboarding: `You are a senior developer writing an onboarding guide for new contributors. Generate a step-by-step onboarding document covering: prerequisites, cloning and setup, environment configuration (list every env var with description), running locally, project structure walkthrough (every important file/folder), coding conventions, how tests work, how to open a PR, and common gotchas. Make it friendly and thorough.`,
 };
 

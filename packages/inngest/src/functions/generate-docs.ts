@@ -4,7 +4,6 @@ import { generateDocMarkdown } from "@codeunicorn/ai";
 
 const DOC_TITLES: Record<string, string> = {
   readme: "README.md",
-  "api-docs": "API Documentation",
   architecture: "Architecture Overview",
   onboarding: "Onboarding Guide",
 };

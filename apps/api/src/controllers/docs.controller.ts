@@ -9,7 +9,7 @@ export async function getDocs(req: AuthRequest, res: Response) {
     const docs = await docsService.getGeneratedDocs(repositoryId, userId);
     res.json({ success: true, data: docs });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(error.statusCode || 500).json({ success: false, error: error.message });
   }
 }
 
@@ -22,7 +22,7 @@ export async function getDoc(req: AuthRequest, res: Response) {
     if (!doc) return res.status(404).json({ success: false, error: "Doc not found" });
     res.json({ success: true, data: doc });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(error.statusCode || 500).json({ success: false, error: error.message });
   }
 }
 
@@ -35,7 +35,7 @@ export async function triggerGenerate(req: AuthRequest, res: Response) {
     const doc = await docsService.triggerDocGeneration(repositoryId, docType, userId);
     res.json({ success: true, data: doc });
   } catch (error: any) {
-    res.status(error.message.includes("Invalid") ? 400 : 500).json({
+    res.status(error.statusCode || (error.message.includes("Invalid") ? 400 : 500)).json({
       success: false,
       error: error.message,
     });
