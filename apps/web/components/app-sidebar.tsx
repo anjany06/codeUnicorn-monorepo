@@ -5,27 +5,16 @@ import {
   Github,
   BookOpen,
   Settings,
-  Moon,
-  Sun,
   LogOut,
   MessageSquare,
   BookMarked,
   Activity,
   CreditCard,
 } from "lucide-react";
-import { useTheme } from "next-themes";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-  DropdownMenuLabel,
-} from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -40,7 +29,6 @@ export const AppSidebar = ({
   mobileOpen,
   onCloseMobile,
 }: AppSidebarProps) => {
-  const { theme, setTheme } = useTheme();
   const pathname = usePathname();
   const { data: session } = useSession();
   const router = useRouter();
@@ -206,18 +194,20 @@ export const AppSidebar = ({
             <li>
               <button
                 type="button"
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                title={collapsed ? (theme === "dark" ? "Light Mode" : "Dark Mode") : undefined}
+                onClick={() =>
+                  signOut({
+                    fetchOptions: {
+                      onSuccess: () => router.push("/login"),
+                    },
+                  })
+                }
+                title={collapsed ? "Logout" : undefined}
                 className={navItemClass(false)}
               >
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/16 bg-linear-to-br from-white/16 via-white/10 to-transparent text-muted-foreground transition-all duration-200 group-hover:text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_8px_24px_-18px_rgba(0,0,0,0.65)]">
-                  {theme === "dark" ? (
-                    <Sun className="h-[18px] w-[18px] shrink-0" />
-                  ) : (
-                    <Moon className="h-[18px] w-[18px] shrink-0" />
-                  )}
+                  <LogOut className="h-[18px] w-[18px] shrink-0" />
                 </span>
-                <span className={labelClass}>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
+                <span className={labelClass}>Logout</span>
               </button>
             </li>
           </ul>
@@ -225,49 +215,21 @@ export const AppSidebar = ({
       </nav>
 
       <footer className="border-t border-border/60 p-3">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className={cn(
-                "flex w-full items-center rounded-xl border border-border/65 bg-background/75 p-2.5 transition-all duration-200 hover:border-border hover:bg-muted/60",
-                collapsed ? "justify-center" : "gap-2.5"
-              )}
-            >
-              <Avatar className="h-9 w-9 shrink-0 rounded-lg border border-border/70">
-                <AvatarImage src={userAvatar ?? ""} />
-                <AvatarFallback className="rounded-lg">{userInitials}</AvatarFallback>
-              </Avatar>
-              <div className={cn("text-left", labelClass)}>
-                <p className="truncate text-sm font-semibold text-foreground">{userName}</p>
-                <p className="truncate text-xs text-muted-foreground">{userEmail}</p>
-              </div>
-            </button>
-          </DropdownMenuTrigger>
-
-          <DropdownMenuContent align="end" side="top" sideOffset={10} className="w-56 rounded-xl">
-            <DropdownMenuLabel>
-              <div className="flex flex-col">
-                <span className="text-sm font-medium">{userName}</span>
-                <span className="text-xs text-muted-foreground">{userEmail}</span>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="cursor-pointer text-destructive focus:text-destructive"
-              onClick={() =>
-                signOut({
-                  fetchOptions: {
-                    onSuccess: () => router.push("/login"),
-                  },
-                })
-              }
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              Sign out
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div
+          className={cn(
+            "flex w-full items-center rounded-xl border border-border/65 bg-background/75 p-2.5",
+            collapsed ? "justify-center" : "gap-2.5"
+          )}
+        >
+          <Avatar className="h-9 w-9 shrink-0 rounded-lg border border-border/70">
+            <AvatarImage src={userAvatar ?? ""} />
+            <AvatarFallback className="rounded-lg">{userInitials}</AvatarFallback>
+          </Avatar>
+          <div className={cn("text-left", labelClass)}>
+            <p className="truncate text-sm font-semibold text-foreground">{userName}</p>
+            <p className="truncate text-xs text-muted-foreground">{userEmail}</p>
+          </div>
+        </div>
       </footer>
     </div>
   );

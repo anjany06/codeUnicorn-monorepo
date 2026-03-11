@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState, useCallback } from "react";
+import React, { useMemo, useState, useCallback, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -313,8 +313,12 @@ function PortfolioDialog({
   const [copied, setCopied] = useState<"link" | "iframe" | "markdown" | null>(
     null,
   );
+  const [baseUrl, setBaseUrl] = useState("");
 
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+  useEffect(() => {
+    setBaseUrl(window.location.origin);
+  }, []);
+
   const embedUrl = `${baseUrl}/embed/${userId}?theme=${themeId}`;
 
   const snippets = {
@@ -414,18 +418,18 @@ export function ContributionGraph({
   userId,
 }: ContributionGraphProps) {
   const [themeId, setThemeId] = useState("github");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const theme = useMemo(
     () => THEMES.find((t) => t.id === themeId) ?? THEMES[0],
     [themeId],
   );
 
-  // Detect dark mode from html class
-  const isDark =
-    typeof document !== "undefined" &&
-    document.documentElement.classList.contains("dark");
-
-  const colors = isDark ? theme.dark : theme.light;
+  const colors = theme.dark;
 
   // Month markers — derive from the first day of each week column
   const monthMarkers = useMemo(() => {
@@ -459,7 +463,7 @@ export function ContributionGraph({
               {data ? (
                 <>
                   <span className="font-semibold text-foreground">
-                    {data.totalContributions.toLocaleString()}
+                    {data.totalContributions.toLocaleString("en-US")}
                   </span>{" "}
                   contributions in the last year
                 </>
@@ -470,7 +474,9 @@ export function ContributionGraph({
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            {userId && <PortfolioDialog userId={userId} themeId={themeId} />}
+            {mounted && userId && (
+              <PortfolioDialog userId={userId} themeId={themeId} />
+            )}
           </div>
         </div>
 
