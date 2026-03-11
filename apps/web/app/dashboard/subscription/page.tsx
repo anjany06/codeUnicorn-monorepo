@@ -2,178 +2,28 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Check,
-  X,
-  RefreshCw,
-  ExternalLink,
-  CreditCard,
-  Zap,
-} from "lucide-react";
-import { checkout, customer } from "@/lib/auth-client";
-import { useSearchParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
-import { getSubscriptionData, syncSubscriptionStatus } from "@/lib/api";
+import { Check, X, Zap } from "lucide-react";
 
 const PLAN_FEATURES = {
   free: [
     { name: "Up to 5 repositories", included: true },
     { name: "Up to 5 reviews per repository", included: true },
-    { name: "Basic code reviews", included: true },
-    { name: "Community support", included: true },
-    { name: "Advanced analytics", included: false },
-    { name: "Priority support", included: false },
+    { name: "Pull Request reviews", included: true },
+    { name: "Limit in AI chat", included: true },
+    { name: "No regeneration in Docs", included: true },
   ],
   pro: [
     { name: "Unlimited repositories", included: true },
     { name: "Unlimited reviews", included: true },
-    { name: "Advanced code reviews", included: true },
-    { name: "Email & Priority support", included: true },
-    { name: "Advanced analytics", included: true },
-    { name: "Priority support", included: true },
+    { name: "Pull Request reviews", included: true },
+    { name: "No Limit in AI chat", included: true },
+    { name: "Regenerate Docs", included: true },
   ],
 };
 
 export default function SubscriptionPage() {
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [portalLoading, setPortalLoading] = useState(false);
-  const [syncLoading, setSyncLoading] = useState(false);
-
-  const searchParams = useSearchParams();
-  const success = searchParams.get("success");
-
-  const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["subscription-data"],
-    queryFn: getSubscriptionData,
-    refetchOnWindowFocus: true,
-  });
-
-  useEffect(() => {
-    if (success === "true") {
-      const sync = async () => {
-        try {
-          const result = await syncSubscriptionStatus();
-
-          if (result.success) {
-            toast.success("Subscription activated! Welcome to Pro.");
-          }
-
-          await refetch();
-        } catch (error) {
-          console.error("Sync Error:", error);
-          toast.error(
-            'Could not verify subscription. Please click "Sync Status" manually.',
-          );
-        }
-      };
-
-      sync();
-    }
-  }, [success, refetch]);
-
-  if (isLoading) {
-    return (
-      <div className="max-w-5xl mx-auto space-y-6 pb-10">
-        <div className="space-y-1.5 animate-pulse">
-          <div className="h-8 w-48 bg-muted/20 rounded-md"></div>
-          <div className="h-4 w-72 bg-muted/10 rounded-md"></div>
-        </div>
-
-        <div className="border border-border/50 rounded-xl bg-card h-[400px] animate-pulse"></div>
-      </div>
-    );
-  }
-
-  if (error || !data?.user) {
-    return (
-      <div className="max-w-5xl mx-auto space-y-6 pb-10">
-        <div className="space-y-1.5">
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-            Plan and Billing
-          </h1>
-
-          <p className="text-sm text-destructive">
-            Failed to load subscription data or you are not signed in.
-          </p>
-        </div>
-
-        <Button variant="outline" size="sm" onClick={() => refetch()}>
-          Retry
-        </Button>
-      </div>
-    );
-  }
-
-  const currentTier = data.user.subscriptionTier as "FREE" | "PRO";
-  const isPro = currentTier === "PRO";
-  const isActive = data.user.subscriptionStatus === "ACTIVE";
-
-  const handleSync = async () => {
-    try {
-      setSyncLoading(true);
-
-      const result = await syncSubscriptionStatus();
-
-      await refetch();
-
-      if (result.success) {
-        toast.success("Subscription status synced successfully");
-      } else {
-        toast.error(
-          "Sync failed: " + (result.message || result.error || "Unknown error"),
-        );
-      }
-    } catch (error) {
-      console.error("Sync Error:", error);
-      toast.error("Failed to reach the server. Please try again.");
-    } finally {
-      setSyncLoading(false);
-    }
-  };
-
-  const handleUpgrade = async () => {
-    try {
-      setCheckoutLoading(true);
-
-      const origFetch = window.fetch;
-
-      window.fetch = async (...args) => {
-        const res = await origFetch(...args);
-
-        if (!res.ok && String(args[0]).includes("checkout")) {
-          const clone = res.clone();
-          const body = await clone.text();
-          console.error("Checkout raw error:", res.status, body);
-        }
-
-        return res;
-      };
-
-      await checkout({
-        slug: "codeUnicorn-new-dev",
-      });
-
-      window.fetch = origFetch;
-    } catch (error) {
-      console.error("Checkout Error:", error);
-      toast.error("Failed to initiate checkout. Please try again.");
-    } finally {
-      setCheckoutLoading(false);
-    }
-  };
-
-  const handleManageSubscription = async () => {
-    try {
-      setPortalLoading(true);
-      await customer.portal();
-    } catch (error) {
-      console.error("Portal Error:", error);
-    } finally {
-      setPortalLoading(false);
-    }
-  };
+  const isPro = false;
+  const isActive = false;
 
   return (
     <div className="max-w-5xl mx-auto space-y-10 pb-10">
@@ -188,35 +38,9 @@ export default function SubscriptionPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSync}
-            disabled={syncLoading}
-            className="h-8 text-xs bg-background"
-          >
-            <RefreshCw
-              className={`h-3.5 w-3.5 mr-1.5 ${
-                syncLoading ? "animate-spin" : ""
-              }`}
-            />
-            Sync Status
-          </Button>
-
-          {(isPro || isActive) && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleManageSubscription}
-              disabled={portalLoading}
-              className="h-8 text-xs bg-background"
-            >
-              <CreditCard className="h-3.5 w-3.5 mr-1.5" />
-              Manage Billing
-            </Button>
-          )}
-        </div>
+        <Badge variant="outline" className="h-8 px-3 text-xs">
+          Billing coming soon
+        </Badge>
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
@@ -238,7 +62,7 @@ export default function SubscriptionPage() {
           )}
 
           <div className="space-y-2 mb-6">
-            <h3 className="text-lg font-semibold text-foreground">Developer</h3>
+            <h3 className="text-lg font-semibold text-foreground">Free</h3>
 
             <div className="flex items-end gap-1">
               <span className="text-4xl font-bold tracking-tight text-foreground">
@@ -313,7 +137,7 @@ export default function SubscriptionPage() {
 
           <div className="space-y-2 mb-6">
             <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-              Team
+              PRO
               {isPro && isActive && (
                 <Badge className="h-5 px-1.5 text-[9px] bg-green-500/10 text-green-600 border-0 uppercase tracking-widest">
                   Active
@@ -323,7 +147,7 @@ export default function SubscriptionPage() {
 
             <div className="flex items-end gap-1">
               <span className="text-4xl font-bold tracking-tight text-foreground">
-                $15
+                $10
               </span>
 
               <span className="text-sm text-muted-foreground mb-1">/month</span>
@@ -345,46 +169,32 @@ export default function SubscriptionPage() {
           </div>
 
           <div className="border-t border-border/40 mt-6 pt-6">
-            {isPro ? (
-              <Button
-                onClick={handleManageSubscription}
-                disabled={portalLoading}
-                className="w-full h-10 text-sm font-medium bg-primary"
-              >
-                {portalLoading ? "Redirecting..." : "Manage Billing"}
-                <ExternalLink className="h-3.5 w-3.5 ml-1.5" />
-              </Button>
-            ) : (
-              <Button
-                onClick={handleUpgrade}
-                disabled={checkoutLoading || syncLoading}
-                className="w-full h-10 text-sm font-medium bg-primary hover:bg-primary/90 shadow-sm"
-              >
-                {checkoutLoading ? "Preparing Checkout..." : "Upgrade to Team"}
-                <Zap className="h-3.5 w-3.5 ml-1.5 fill-current" />
-              </Button>
-            )}
+            <Button
+              disabled
+              className="w-full h-10 text-sm font-medium bg-primary/80 hover:bg-primary/80 cursor-not-allowed"
+            >
+              Coming Soon
+              <Zap className="h-3.5 w-3.5 ml-1.5 fill-current" />
+            </Button>
           </div>
         </div>
       </div>
 
-      {!isPro && (
-        <div className="mt-12 border-t border-border/40 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="space-y-1 text-center sm:text-left">
-            <h4 className="text-sm font-medium text-foreground">
-              Need more repositories or enterprise support?
-            </h4>
+      {/* <div className="mt-12 border-t border-border/40 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="space-y-1 text-center sm:text-left">
+          <h4 className="text-sm font-medium text-foreground">
+            Need more repositories or enterprise support?
+          </h4>
 
-            <p className="text-sm text-muted-foreground">
-              Our enterprise plans offer custom SLAs and dedicated support.
-            </p>
-          </div>
-
-          <Button variant="outline" size="sm" className="h-9 text-sm">
-            Contact Sales
-          </Button>
+          <p className="text-sm text-muted-foreground">
+            Our enterprise plans offer custom SLAs and dedicated support.
+          </p>
         </div>
-      )}
+
+        <Button variant="outline" size="sm" className="h-9 text-sm">
+          Contact Sales
+        </Button>
+      </div> */}
     </div>
   );
 }
