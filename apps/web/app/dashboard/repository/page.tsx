@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ExternalLink, Star, Search, Github } from "lucide-react";
 import { useRepositories } from "./_hooks/use-repositories";
@@ -10,6 +9,7 @@ import {
   RepositoryRowSkeletons,
 } from "./_components/repository-skeleton";
 import { useConnectRepository } from "./_hooks/use-connect-repository";
+import { ConnectButton } from "./_components/connect-button";
 
 interface Repository {
   id: number;
@@ -22,6 +22,67 @@ interface Repository {
   language: string | null;
   topics: string[];
   isConnected: boolean;
+}
+
+type LanguageTheme = {
+  label: string;
+  icon: string;
+};
+
+function getLanguageTheme(language: string | null): LanguageTheme {
+  if (!language) {
+    return { label: "Unknown", icon: "</>" };
+  }
+
+  const cleaned = language.trim();
+  const normalized = cleaned.toLowerCase();
+  const languageIconMap: Record<string, string> = {
+    javascript: "JS",
+    typescript: "TS",
+    python: "PY",
+    java: "JV",
+    go: "GO",
+    rust: "RS",
+    ruby: "RB",
+    php: "PHP",
+    swift: "SW",
+    kotlin: "KT",
+    html: "HT",
+    css: "CS",
+    shell: "SH",
+    bash: "SH",
+    zsh: "SH",
+    "c#": "C#",
+    "c++": "C+",
+    "objective-c": "OC",
+    "objective-c++": "OC",
+  };
+
+  const mappedIcon = languageIconMap[normalized];
+  const short = mappedIcon
+    ? mappedIcon
+    : cleaned.replace(/[^a-zA-Z+#]/g, "").slice(0, 2).toUpperCase();
+  return {
+    label: cleaned,
+    icon: short || "</>",
+  };
+}
+
+function LanguageBadge({ language }: { language: string | null }) {
+  const theme = getLanguageTheme(language);
+
+  return (
+    <span
+      className="inline-flex items-center gap-2 rounded-lg border border-border/65 bg-linear-to-b from-background/90 to-muted/40 px-2.5 py-1 text-xs font-semibold tracking-[0.02em] text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_8px_16px_-12px_rgba(0,0,0,0.5)]"
+    >
+      <span
+        className="inline-flex h-5 min-w-5 items-center justify-center rounded-md border border-border/70 bg-linear-to-b from-muted to-muted/70 px-1 text-[10px] font-black leading-none text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.14)]"
+      >
+        {theme.icon}
+      </span>
+      <span>{theme.label}</span>
+    </span>
+  );
 }
 
 export default function RepositoryPage() {
@@ -116,11 +177,11 @@ export default function RepositoryPage() {
 
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
+          <h1 className="text-2xl font-heading font-semibold">
             Repositories
           </h1>
 
-          <p className="text-sm text-muted-foreground">
+          <p className="text-md text-muted-foreground">
             Manage and connect your GitHub repositories
           </p>
         </div>
@@ -156,9 +217,11 @@ export default function RepositoryPage() {
                     rel="noopener noreferrer"
                     className="font-medium text-sm hover:underline flex items-center gap-2 min-w-0"
                   >
-                    <Github className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-border/70 bg-linear-to-b from-background/90 to-muted/40 text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_8px_16px_-12px_rgba(0,0,0,0.5)]">
+                      <Github className="h-3.5 w-3.5" />
+                    </span>
 
-                    <span className="truncate">{repo.name}</span>
+                    <span className="truncate text-xl">{repo.name}</span>
                   </a>
 
                   {repo.isConnected && (
@@ -176,16 +239,13 @@ export default function RepositoryPage() {
                 )}
 
                 <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1 flex-wrap">
-                  {repo.language && (
-                    <span className="flex items-center gap-1.5">
-                      <span className="h-1.5 w-1.5 rounded-full bg-primary/40"></span>
-                      {repo.language}
-                    </span>
-                  )}
+                  <LanguageBadge language={repo.language} />
 
-                  <span className="flex items-center gap-1">
-                    <Star className="h-3.5 w-3.5" />
-                    {repo.stargazers_count}
+                  <span className="inline-flex items-center gap-1.5 rounded-md border border-border/65 bg-linear-to-b from-background/90 to-muted/40 px-2.5 py-1 text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_8px_16px_-12px_rgba(0,0,0,0.5)]">
+                    <Star className="h-3.5 w-3.5 text-foreground/80" />
+                    <span className="font-semibold tabular-nums">
+                      {repo.stargazers_count.toLocaleString()}
+                    </span>
                   </span>
                 </div>
               </div>
@@ -202,19 +262,11 @@ export default function RepositoryPage() {
                   <ExternalLink className="h-4 w-4" />
                 </a>
 
-                <Button
-                  size="sm"
-                  variant={repo.isConnected ? "secondary" : "default"}
-                  className="h-8 text-xs px-3"
+                <ConnectButton
+                  isConnected={repo.isConnected}
+                  isLoading={localConnectingId === repo.id}
                   onClick={() => handleConnect(repo)}
-                  disabled={localConnectingId === repo.id || repo.isConnected}
-                >
-                  {localConnectingId === repo.id
-                    ? "Connecting..."
-                    : repo.isConnected
-                      ? "Connected"
-                      : "Connect"}
-                </Button>
+                />
               </div>
             </div>
           ))}

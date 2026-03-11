@@ -102,6 +102,18 @@ export async function sendMessage(req: AuthRequest, res: Response) {
     res.end();
   } catch (error: any) {
     console.error("Error in chat stream:", error);
+
+    if (error?.name === "ChatRateLimitError" || error?.statusCode === 429) {
+      return res.status(429).json({
+        success: false,
+        error: "RATE_LIMIT_EXCEEDED",
+        message:
+          error.message ||
+          "Free plan limit reached: 10 messages per 8 hours. Please try again later.",
+        data: error.details || null,
+      });
+    }
+
     // If headers already sent (streaming started), close the stream
     if (res.headersSent) {
       res.write(`data: ${JSON.stringify({ type: "error", content: error.message })}\n\n`);

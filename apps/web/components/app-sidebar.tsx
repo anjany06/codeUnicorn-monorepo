@@ -81,7 +81,7 @@ export const AppSidebar = ({
     );
 
   const labelClass = cn(
-    "overflow-hidden whitespace-nowrap text-sm font-medium transition-all duration-200",
+    "overflow-hidden whitespace-nowrap text-md font-medium transition-all duration-200",
     collapsed
       ? "max-w-0 -translate-x-1 opacity-0"
       : "max-w-[170px] translate-x-0 opacity-100"
@@ -109,8 +109,12 @@ export const AppSidebar = ({
               />
             </div>
             <div className={labelClass}>
-              <p className="text-sm font-semibold text-foreground">CodeUnicorn</p>
-              <p className="text-xs text-muted-foreground">Developer Suite</p>
+              <p className="font-heading text-md font-semibold text-foreground">
+                CodeUnicorn
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Developer Suite
+              </p>
             </div>
           </Link>
         </div>
@@ -120,7 +124,7 @@ export const AppSidebar = ({
         <section className="space-y-2">
           <p
             className={cn(
-              "px-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground transition-all duration-200",
+              "px-2 text-[11px] font-heading font-semibold uppercase tracking-[0.12em] text-muted-foreground transition-all duration-200",
               collapsed ? "max-h-0 opacity-0" : "max-h-6 opacity-100"
             )}
           >
@@ -158,7 +162,7 @@ export const AppSidebar = ({
         <section className="space-y-2">
           <p
             className={cn(
-              "px-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground transition-all duration-200",
+              "px-2 text-[11px] font-heading font-semibold uppercase tracking-[0.12em] text-muted-foreground transition-all duration-200",
               collapsed ? "max-h-0 opacity-0" : "max-h-6 opacity-100"
             )}
           >
@@ -226,8 +230,8 @@ export const AppSidebar = ({
             <AvatarFallback className="rounded-lg">{userInitials}</AvatarFallback>
           </Avatar>
           <div className={cn("text-left", labelClass)}>
-            <p className="truncate text-sm font-semibold text-foreground">{userName}</p>
-            <p className="truncate text-xs text-muted-foreground">{userEmail}</p>
+            <p className="truncate text-sm font-heading font-semibold text-foreground">{userName}</p>
+            <p className="truncate text-sm text-muted-foreground">{userEmail}</p>
           </div>
         </div>
       </footer>

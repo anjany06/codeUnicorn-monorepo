@@ -48,11 +48,11 @@ export default function ReviewsPage() {
     <div className="max-w-6xl mx-auto space-y-6 pb-10 px-4 sm:px-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
+        <h1 className="text-2xl font-heading font-semibold">
           Review History
         </h1>
 
-        <p className="text-sm text-muted-foreground">
+        <p className="text-md text-muted-foreground">
           A complete log of all code reviews performed across your repositories.
         </p>
       </div>

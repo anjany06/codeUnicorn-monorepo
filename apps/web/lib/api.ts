@@ -251,7 +251,17 @@ export async function* streamChatMessage(
   });
 
   if (!response.ok) {
-    throw new Error("Failed to send message");
+    let errorMessage = "Failed to send message";
+    try {
+      const payload = await response.json();
+      errorMessage =
+        payload?.message ||
+        payload?.error ||
+        `Failed to send message (HTTP ${response.status})`;
+    } catch {
+      errorMessage = `Failed to send message (HTTP ${response.status})`;
+    }
+    throw new Error(errorMessage);
   }
 
   const reader = response.body?.getReader();

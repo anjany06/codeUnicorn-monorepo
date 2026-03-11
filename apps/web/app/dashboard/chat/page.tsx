@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -60,6 +62,7 @@ export default function ChatPage() {
   const [messageInput, setMessageInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
+  const [sendError, setSendError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -137,13 +140,15 @@ export default function ChatPage() {
     if (!messageInput.trim() || !activeSessionId || isStreaming) return;
 
     const userMessage = messageInput.trim();
+    const messageQueryKey = ["chat-messages", activeSessionId] as const;
     setMessageInput("");
     setIsStreaming(true);
     setStreamingContent("");
+    setSendError(null);
 
     // Optimistically add user message to cache
     queryClient.setQueryData(
-      ["chat-messages", activeSessionId],
+      messageQueryKey,
       (old: ChatMessage[] = []) => [
         ...old,
         {
@@ -172,13 +177,42 @@ export default function ChatPage() {
         }
       }
 
-      // Refresh messages from server to get persisted data
-      queryClient.invalidateQueries({
-        queryKey: ["chat-messages", activeSessionId],
+      // Refetch persisted messages before clearing stream text to avoid visual "vanish" gap.
+      await queryClient.refetchQueries({
+        queryKey: messageQueryKey,
+        type: "active",
       });
+
+      // If backend persistence is slightly delayed, keep the streamed assistant reply in UI.
+      if (fullContent.trim()) {
+        const latestMessages =
+          queryClient.getQueryData<ChatMessage[]>(messageQueryKey) ?? [];
+        const hasAssistantReply = latestMessages.some(
+          (m) => m.role === "assistant" && m.content.trim() === fullContent.trim(),
+        );
+
+        if (!hasAssistantReply) {
+          queryClient.setQueryData(
+            messageQueryKey,
+            (old: ChatMessage[] = []) => [
+              ...old,
+              {
+                id: `temp-assistant-${Date.now()}`,
+                role: "assistant",
+                content: fullContent,
+                createdAt: new Date().toISOString(),
+              },
+            ],
+          );
+        }
+      }
+
       queryClient.invalidateQueries({ queryKey: ["chat-sessions"] });
     } catch (err) {
       console.error("Failed to send message:", err);
+      const message =
+        err instanceof Error ? err.message : "Failed to send message";
+      setSendError(message);
     } finally {
       setIsStreaming(false);
       setStreamingContent("");
@@ -213,59 +247,69 @@ export default function ChatPage() {
     return words.slice(0, maxWords).join(" ") + "…";
   };
 
-  // Simple markdown-like rendering for code blocks
+  // Proper markdown rendering (bold, lists, headings, links, code fences, etc.)
   const renderMessageContent = (content: string) => {
-    const parts = content.split(/(```[\s\S]*?```)/g);
-    return parts.map((part, i) => {
-      if (part.startsWith("```") && part.endsWith("```")) {
-        const lines = part.slice(3, -3).split("\n");
-        const lang = lines[0]?.trim() || "";
-        const code = lang ? lines.slice(1).join("\n") : lines.join("\n");
-        return (
-          <div
-            key={i}
-            className="my-3 rounded-lg overflow-hidden border border-border"
-          >
-            {lang && (
-              <div className="bg-muted px-3 py-1 text-xs text-muted-foreground font-mono flex items-center gap-1.5">
-                <Code2 className="h-3 w-3" />
-                {lang}
-              </div>
-            )}
-            <pre className="bg-muted/50 p-3 overflow-x-auto">
-              <code className="text-sm font-mono whitespace-pre-wrap wrap-break-word">
-                {code}
-              </code>
-            </pre>
-          </div>
-        );
-      }
-      // Render inline code
-      const inlineParts = part.split(/(`[^`]+`)/g);
-      return (
-        <span key={i}>
-          {inlineParts.map((ip, j) => {
-            if (ip.startsWith("`") && ip.endsWith("`")) {
+    return (
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          p: ({ children }) => (
+            <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>
+          ),
+          ul: ({ children }) => (
+            <ul className="mb-2 ml-5 list-disc space-y-1">{children}</ul>
+          ),
+          ol: ({ children }) => (
+            <ol className="mb-2 ml-5 list-decimal space-y-1">{children}</ol>
+          ),
+          li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+          strong: ({ children }) => (
+            <strong className="font-semibold text-foreground">{children}</strong>
+          ),
+          a: ({ children, href }) => (
+            <a
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-2 text-primary hover:text-primary/80"
+            >
+              {children}
+            </a>
+          ),
+          code: ({ className, children }) => {
+            const match = /language-(\w+)/.exec(className || "");
+            const language = match?.[1] || "";
+            const value = String(children).replace(/\n$/, "");
+
+            if (!match) {
               return (
-                <code
-                  key={j}
-                  className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono break-all"
-                >
-                  {ip.slice(1, -1)}
+                <code className="rounded bg-muted px-1.5 py-0.5 text-[13px] font-mono break-all">
+                  {children}
                 </code>
               );
             }
-            // Handle line breaks
-            return ip.split("\n").map((line, k) => (
-              <React.Fragment key={`${j}-${k}`}>
-                {k > 0 && <br />}
-                {line}
-              </React.Fragment>
-            ));
-          })}
-        </span>
-      );
-    });
+
+            return (
+              <div className="my-3 overflow-hidden rounded-lg border border-border">
+                {language && (
+                  <div className="flex items-center gap-1.5 bg-muted px-3 py-1 font-mono text-xs text-muted-foreground">
+                    <Code2 className="h-3 w-3" />
+                    {language}
+                  </div>
+                )}
+                <pre className="overflow-x-auto bg-muted/50 p-3">
+                  <code className="whitespace-pre-wrap break-words font-mono text-sm">
+                    {value}
+                  </code>
+                </pre>
+              </div>
+            );
+          },
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    );
   };
 
   return (
@@ -285,10 +329,10 @@ export default function ChatPage() {
           )}
         </Button>
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+          <h1 className="text-2xl font-heading md:text-3xl font-bold">
             AI Codebase Chat
           </h1>
-          <p className="text-sm text-muted-foreground hidden sm:block">
+          <p className="text-md text-muted-foreground hidden sm:block">
             Chat with AI about your codebase using context-aware RAG
           </p>
         </div>
@@ -559,8 +603,13 @@ export default function ChatPage() {
                   </Button>
                 </div>
                 <p className="text-[10px] text-muted-foreground text-center mt-1.5 hidden md:block">
-                  Enter to send · Shift+Enter for new line
+                  Enter to send | Shift+Enter for new line
                 </p>
+                {sendError && (
+                  <p className="mt-1.5 text-center text-[11px] text-destructive">
+                    {sendError}
+                  </p>
+                )}
               </div>
             </>
           )}
@@ -569,3 +618,4 @@ export default function ChatPage() {
     </div>
   );
 }
+

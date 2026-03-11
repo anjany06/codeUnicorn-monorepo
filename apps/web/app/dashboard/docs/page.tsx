@@ -240,8 +240,8 @@ export default function DocsPage() {
     <div className="flex flex-col gap-6 p-4 sm:p-6 w-full max-w-full">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold">Auto-Generated Docs</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="text-2xl font-heading font-bold">Auto-Generated Docs</h1>
+        <p className="text-muted-foreground text-md mt-1">
           Use AI to generate documentation for your repositories using the
           indexed codebase
         </p>

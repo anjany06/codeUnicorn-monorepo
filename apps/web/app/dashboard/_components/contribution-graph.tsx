@@ -294,7 +294,7 @@ function ThemePicker({
               />
             ))}
           </div>
-          <span>{t.name}</span>
+          <span className="font-bold">{t.name}</span>
         </button>
       ))}
     </div>

@@ -2,6 +2,81 @@ import { prisma } from "@codeunicorn/database";
 import { retrieveContext } from "@codeunicorn/ai";
 import { streamText } from "ai";
 import { google } from "@ai-sdk/google";
+import { getUserTier } from "./subscription.service";
+
+const FREE_CHAT_MESSAGE_LIMIT = 10;
+const FREE_CHAT_WINDOW_HOURS = 8;
+
+export class ChatRateLimitError extends Error {
+  statusCode: number;
+  details: {
+    limit: number;
+    used: number;
+    remaining: number;
+    windowHours: number;
+    resetAt: string;
+  };
+
+  constructor(details: {
+    limit: number;
+    used: number;
+    remaining: number;
+    windowHours: number;
+    resetAt: string;
+  }) {
+    super(
+      `Free plan limit reached: ${details.limit} messages per ${details.windowHours} hours. Try again after ${new Date(details.resetAt).toLocaleString()}.`
+    );
+    this.name = "ChatRateLimitError";
+    this.statusCode = 429;
+    this.details = details;
+  }
+}
+
+async function enforceChatRateLimit(userId: string): Promise<void> {
+  const tier = await getUserTier(userId);
+  if (tier === "PRO") return;
+
+  const now = new Date();
+  const windowStart = new Date(
+    now.getTime() - FREE_CHAT_WINDOW_HOURS * 60 * 60 * 1000
+  );
+
+  // Count user prompts across all sessions in the rolling window.
+  const used = await prisma.chatMessage.count({
+    where: {
+      role: "user",
+      createdAt: { gte: windowStart },
+      chatSession: { userId },
+    },
+  });
+
+  if (used < FREE_CHAT_MESSAGE_LIMIT) return;
+
+  const oldestInWindow = await prisma.chatMessage.findFirst({
+    where: {
+      role: "user",
+      createdAt: { gte: windowStart },
+      chatSession: { userId },
+    },
+    orderBy: { createdAt: "asc" },
+    select: { createdAt: true },
+  });
+
+  const resetAt = oldestInWindow
+    ? new Date(
+        oldestInWindow.createdAt.getTime() + FREE_CHAT_WINDOW_HOURS * 60 * 60 * 1000
+      )
+    : new Date(now.getTime() + FREE_CHAT_WINDOW_HOURS * 60 * 60 * 1000);
+
+  throw new ChatRateLimitError({
+    limit: FREE_CHAT_MESSAGE_LIMIT,
+    used,
+    remaining: 0,
+    windowHours: FREE_CHAT_WINDOW_HOURS,
+    resetAt: resetAt.toISOString(),
+  });
+}
 
 // ─── Feature 2: AI Codebase Chat ────────────────────────────────────────────
 
@@ -90,6 +165,8 @@ export async function streamChatResponse(
   userId: string,
   userMessage: string
 ) : Promise<{ result: ReturnType<typeof streamText>; sessionId: string }> {
+  await enforceChatRateLimit(userId);
+
   // Verify ownership and get repository info
   const session = await prisma.chatSession.findFirst({
     where: { id: sessionId, userId },
