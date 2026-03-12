@@ -117,7 +117,7 @@ export const THEMES: HeatmapTheme[] = [
     name: "Golden",
     emoji: "✨",
     light: ["#ebedf0", "#fde68a", "#fbbf24", "#f59e0b", "#d97706"],
-    dark: ["#2d333b", "#451a03", "#92400e", "#d97706", "#fbbf24"],
+    dark: ["#2d333b", "#592204", "#92400e", "#d97706", "#fbbf24"],
     accent: "#f59e0b",
   },
   {
@@ -141,7 +141,7 @@ export const THEMES: HeatmapTheme[] = [
     name: "Coral",
     emoji: "🔥",
     light: ["#ebedf0", "#fed7aa", "#fdba74", "#f97316", "#c2410c"],
-    dark: ["#2d333b", "#431407", "#9a3412", "#ea580c", "#fb923c"],
+    dark: ["#2d333b", "#591B09", "#9a3412", "#ea580c", "#fb923c"],
     accent: "#f97316",
   },
   {
