@@ -67,13 +67,11 @@ export async function getContributionGraph(req: AuthRequest, res: Response) {
 export async function getContributionGraphPublic(req: Request, res: Response) {
   try {
     const { userId } = req.params;
-    if (!userId) {
-      res.status(400).json({ success: false, error: "Missing userId" });
+    if (!userId || Array.isArray(userId)) {
+      res.status(400).json({ success: false, error: "Invalid userId" });
       return;
     }
     const data = await dashboardService.getContributionGraphPublic(userId);
-    // Set generous CORS for embeds
-    res.setHeader("Access-Control-Allow-Origin", "*");
     res.json({ success: true, data });
   } catch (error) {
     console.error("Error fetching public contribution graph:", error);

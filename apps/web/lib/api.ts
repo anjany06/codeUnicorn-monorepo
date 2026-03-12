@@ -23,6 +23,19 @@ async function fetchApi<T>(
   return res.json();
 }
 
+async function fetchPublicApi<T>(
+  endpoint: string,
+  options?: RequestInit
+): Promise<ApiResponse<T>> {
+  const res = await fetch(`${API_URL}${endpoint}`, {
+    ...options,
+    credentials: "omit",
+    headers: options?.headers,
+  });
+
+  return res.json();
+}
+
 // User/Profile API
 export async function getUserProfile() {
   const res = await fetchApi<{
@@ -118,7 +131,7 @@ export async function getContributionData(): Promise<ContributionData | null> {
 export async function getContributionDataPublic(
   userId: string,
 ): Promise<ContributionData | null> {
-  const res = await fetchApi<ContributionData>(
+  const res = await fetchPublicApi<ContributionData>(
     `/api/dashboard/contributions/${userId}`,
   );
   return res.data || null;
