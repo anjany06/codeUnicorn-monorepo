@@ -1,4 +1,4 @@
-import React from "react";
+import type { ReactNode } from "react";
 import { BookOpen, Network, Users } from "lucide-react";
 import type { DocType } from "@/lib/api";
 
@@ -6,7 +6,7 @@ export const DOC_TYPES: {
   type: DocType;
   label: string;
   description: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
 }[] = [
   {
     type: "readme",
