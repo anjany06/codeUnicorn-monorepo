@@ -38,6 +38,7 @@ import {
   getConnectedRepositories,
 } from "@/lib/api";
 import { Spinner } from "@/components/ui/spinner";
+import { ConnectButton } from "../repository/_components/connect-button";
 
 interface ChatMessage {
   id: string;
@@ -329,7 +330,7 @@ export default function ChatPage() {
           )}
         </Button>
         <div>
-          <h1 className="text-2xl font-heading md:text-3xl font-bold">
+          <h1 className="text-2xl font-heading font-semibold">
             AI Codebase Chat
           </h1>
           <p className="text-md text-muted-foreground hidden sm:block">
@@ -470,7 +471,10 @@ export default function ChatPage() {
             <div className="flex-1 flex items-center justify-center p-4">
               <div className="text-center space-y-4">
                 <div className="mx-auto flex h-14 w-14 md:h-16 md:w-16 items-center justify-center rounded-full bg-primary/10">
-                  <Bot className="h-7 w-7 md:h-8 md:w-8 text-primary" />
+                  <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/25 bg-linear-to-b from-primary/30 via-primary/18 to-primary/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),inset_0_-8px_14px_rgba(0,0,0,0.18),0_14px_24px_-16px_rgba(16,185,129,0.55)] md:h-16 md:w-16">
+                    <span className="pointer-events-none absolute left-2 top-1.5 h-2.5 w-6 rounded-full bg-white/25 blur-[1px]" />
+                    <Bot className="h-7 w-7 text-primary drop-shadow-[0_2px_1px_rgba(0,0,0,0.25)] md:h-8 md:w-8" />
+                  </div>
                 </div>
                 <div>
                   <h3 className="text-base md:text-lg font-semibold">
@@ -481,14 +485,15 @@ export default function ChatPage() {
                     indexed codebase for context-aware answers.
                   </p>
                 </div>
-                <Button
+                <ConnectButton
                   onClick={handleNewChat}
+                  isConnected={false}
+                  isLoading={createSessionMutation.isPending}
                   disabled={repos.length === 0}
-                  className="gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  Start a conversation
-                </Button>
+                  idleLabel="Start a conversation"
+                  loadingLabel="Starting..."
+                  idleIcon={<Plus className="h-3.5 w-3.5" />}
+                />
               </div>
             </div>
           ) : (

@@ -29,7 +29,7 @@ export default function SubscriptionPage() {
     <div className="max-w-5xl mx-auto space-y-10 pb-10">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div className="space-y-1.5">
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+          <h1 className="font-heading text-3xl font-semibold tracking-tight text-foreground">
             Plan and Billing
           </h1>
 
@@ -62,10 +62,12 @@ export default function SubscriptionPage() {
           )}
 
           <div className="space-y-2 mb-6">
-            <h3 className="text-lg font-semibold text-foreground">Free</h3>
+            <h3 className="font-heading text-lg font-semibold text-foreground">
+              Free
+            </h3>
 
             <div className="flex items-end gap-1">
-              <span className="text-4xl font-bold tracking-tight text-foreground">
+              <span className="font-heading text-4xl font-bold tracking-tight text-foreground">
                 $0
               </span>
 
@@ -136,7 +138,7 @@ export default function SubscriptionPage() {
           )}
 
           <div className="space-y-2 mb-6">
-            <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+            <h3 className="font-heading text-lg font-semibold text-foreground flex items-center gap-2">
               PRO
               {isPro && isActive && (
                 <Badge className="h-5 px-1.5 text-[9px] bg-green-500/10 text-green-600 border-0 uppercase tracking-widest">
@@ -146,7 +148,7 @@ export default function SubscriptionPage() {
             </h3>
 
             <div className="flex items-end gap-1">
-              <span className="text-4xl font-bold tracking-tight text-foreground">
+              <span className="font-heading text-4xl font-bold tracking-tight text-foreground">
                 $10
               </span>
 
