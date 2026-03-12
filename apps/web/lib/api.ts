@@ -191,6 +191,14 @@ export interface SubscriptionData {
         canAdd: boolean;
       };
     };
+    chatMessages: {
+      current: number;
+      limit: number | null;
+      remaining: number | null;
+      canAdd: boolean;
+      windowHours: number | null;
+      resetAt: string | null;
+    };
   } | null;
 }
 

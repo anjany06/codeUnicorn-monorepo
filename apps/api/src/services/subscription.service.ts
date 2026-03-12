@@ -18,6 +18,14 @@ export interface UserLimits {
       canAdd: boolean;
     };
   };
+  chatMessages: {
+    current: number;
+    limit: number | null;
+    remaining: number | null;
+    canAdd: boolean;
+    windowHours: number | null;
+    resetAt: string | null;
+  };
 }
 
 const TIER_LIMITS = {
@@ -30,6 +38,9 @@ const TIER_LIMITS = {
     reviewsPerRepo: null,
   },
 } as const;
+
+const FREE_CHAT_MESSAGE_LIMIT = 10;
+const FREE_CHAT_WINDOW_HOURS = 8;
 
 const polarClient = new Polar({
   accessToken: process.env.POLAR_ACCESS_TOKEN!,
@@ -123,6 +134,14 @@ export async function getRemainingLimits(userId: string): Promise<UserLimits> {
       canAdd: tier === "PRO" || usage.repositoryCount < TIER_LIMITS.FREE.repositories,
     },
     reviews: {},
+    chatMessages: {
+      current: 0,
+      limit: tier === "PRO" ? null : FREE_CHAT_MESSAGE_LIMIT,
+      remaining: tier === "PRO" ? null : FREE_CHAT_MESSAGE_LIMIT,
+      canAdd: true,
+      windowHours: tier === "PRO" ? null : FREE_CHAT_WINDOW_HOURS,
+      resetAt: null,
+    },
   };
 
   const repositories = await prisma.repository.findMany({
@@ -136,6 +155,44 @@ export async function getRemainingLimits(userId: string): Promise<UserLimits> {
       current: currentCount,
       limit: tier === "PRO" ? null : TIER_LIMITS.FREE.reviewsPerRepo,
       canAdd: tier === "PRO" || currentCount < TIER_LIMITS.FREE.reviewsPerRepo,
+    };
+  }
+
+  if (tier === "FREE") {
+    const now = new Date();
+    const windowStart = new Date(now.getTime() - FREE_CHAT_WINDOW_HOURS * 60 * 60 * 1000);
+
+    const used = await prisma.chatMessage.count({
+      where: {
+        role: "user",
+        createdAt: { gte: windowStart },
+        chatSession: { userId },
+      },
+    });
+
+    const oldestInWindow = used
+      ? await prisma.chatMessage.findFirst({
+          where: {
+            role: "user",
+            createdAt: { gte: windowStart },
+            chatSession: { userId },
+          },
+          orderBy: { createdAt: "asc" },
+          select: { createdAt: true },
+        })
+      : null;
+
+    limits.chatMessages = {
+      current: used,
+      limit: FREE_CHAT_MESSAGE_LIMIT,
+      remaining: Math.max(0, FREE_CHAT_MESSAGE_LIMIT - used),
+      canAdd: used < FREE_CHAT_MESSAGE_LIMIT,
+      windowHours: FREE_CHAT_WINDOW_HOURS,
+      resetAt: oldestInWindow
+        ? new Date(
+            oldestInWindow.createdAt.getTime() + FREE_CHAT_WINDOW_HOURS * 60 * 60 * 1000
+          ).toISOString()
+        : null,
     };
   }
 

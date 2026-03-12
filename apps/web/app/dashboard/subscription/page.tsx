@@ -1,29 +1,90 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Check, X, Zap } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { getSubscriptionData } from "@/lib/api";
+import { Check, Loader2, X, Zap } from "lucide-react";
+
+const FREE_REPOSITORY_LIMIT = 5;
+const FREE_REVIEWS_PER_REPOSITORY_LIMIT = 5;
+const FREE_CHAT_MESSAGE_LIMIT = 10;
 
 const PLAN_FEATURES = {
   free: [
     { name: "Up to 5 repositories", included: true },
     { name: "Up to 5 reviews per repository", included: true },
     { name: "Pull Request reviews", included: true },
-    { name: "Limit in AI chat", included: true },
+    { name: "Up to 10 AI chat messages / 8 hours", included: true },
     { name: "No regeneration in Docs", included: true },
   ],
   pro: [
     { name: "Unlimited repositories", included: true },
     { name: "Unlimited reviews", included: true },
     { name: "Pull Request reviews", included: true },
-    { name: "No Limit in AI chat", included: true },
+    { name: "Unlimited AI chat messages", included: true },
     { name: "Regenerate Docs", included: true },
   ],
 };
 
 export default function SubscriptionPage() {
-  const isPro = false;
-  const isActive = false;
+  const { data: subscriptionData, isLoading } = useQuery({
+    queryKey: ["subscription-data"],
+    queryFn: getSubscriptionData,
+    refetchOnWindowFocus: false,
+  });
+
+  const isPro = subscriptionData?.user?.subscriptionTier === "PRO";
+  const isActive = subscriptionData?.user?.subscriptionStatus === "ACTIVE";
+  const limits = subscriptionData?.limits;
+
+  const repositoriesCurrent = limits?.repositories.current ?? 0;
+  const repositoriesLimit =
+    limits?.repositories.limit ?? (isPro ? null : FREE_REPOSITORY_LIMIT);
+
+  const reviewEntries = Object.values(limits?.reviews ?? {});
+  const reviewsCurrent =
+    reviewEntries.length > 0
+      ? Math.max(...reviewEntries.map((item) => item.current))
+      : 0;
+  const reviewsLimit =
+    reviewEntries.find((item) => item.limit !== null)?.limit ??
+    (isPro ? null : FREE_REVIEWS_PER_REPOSITORY_LIMIT);
+
+  const chatCurrent = limits?.chatMessages.current ?? 0;
+  const chatLimit = limits?.chatMessages.limit ?? (isPro ? null : FREE_CHAT_MESSAGE_LIMIT);
+  const chatWindowHours = limits?.chatMessages.windowHours ?? 8;
+
+  const usageItems = [
+    {
+      label: "Connected repositories",
+      current: repositoriesCurrent,
+      limit: repositoriesLimit,
+      hint: isPro ? "Unlimited repositories on Pro" : "Repository connections used",
+    },
+    {
+      label: "AI reviews",
+      current: reviewsCurrent,
+      limit: reviewsLimit,
+      hint: isPro
+        ? "Unlimited reviews on Pro"
+        : reviewEntries.length === 0
+          ? "Per repository limit (no repository connected yet)"
+          : "Per repository usage (highest used repository)",
+    },
+    {
+      label: "AI chat messages",
+      current: chatCurrent,
+      limit: chatLimit,
+      hint: isPro ? "Unlimited chat on Pro" : `Rolling ${chatWindowHours}-hour window`,
+    },
+  ];
+
+  const getProgressValue = (current: number, limit: number | null) => {
+    if (limit === null || limit <= 0) return 100;
+    return Math.min((current / limit) * 100, 100);
+  };
 
   return (
     <div className="max-w-5xl mx-auto space-y-10 pb-10">
@@ -42,6 +103,51 @@ export default function SubscriptionPage() {
           Billing coming soon
         </Badge>
       </div>
+
+      <section className="rounded-xl border border-border/60 bg-card p-5 sm:p-6">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className="font-heading text-lg font-semibold text-foreground">
+              Usage Overview
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Track your current plan limits at a glance.
+            </p>
+          </div>
+
+          <Badge variant="outline" className="w-fit gap-1.5">
+            {isLoading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            {isLoading ? "Loading" : `${isPro ? "PRO" : "FREE"} Plan`}
+          </Badge>
+        </div>
+
+        <div className="mt-5 grid gap-4 md:grid-cols-3">
+          {usageItems.map((item) => (
+            <div
+              key={item.label}
+              className="rounded-lg border border-border/60 bg-muted/20 p-4"
+            >
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <p className="text-sm font-medium text-foreground">{item.label}</p>
+                <p className="text-xs font-semibold text-muted-foreground">
+                  {isLoading
+                    ? "--"
+                    : item.limit === null
+                      ? "Unlimited"
+                      : `${item.current}/${item.limit}`}
+                </p>
+              </div>
+
+              <Progress
+                value={isLoading ? 0 : getProgressValue(item.current, item.limit)}
+                className="h-2"
+              />
+
+              <p className="mt-2 text-xs text-muted-foreground">{item.hint}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
       <div className="grid md:grid-cols-2 gap-6">
         {/* FREE PLAN */}
