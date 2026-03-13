@@ -1,11 +1,12 @@
 {
   "name": "@codeunicorn/database",
   "version": "1.0.0",
-  "main": "./src/index.ts",
+  "type": "module",
+  "main": "./dist/index.js",
   "types": "./src/index.ts",
   "scripts": {
     "db:generate": "prisma generate",
-    "build": "pnpm db:generate",
+    "build": "pnpm db:generate && tsc -p tsconfig.json",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio"
@@ -24,7 +25,7 @@
   "exports": {
     ".": {
       "types": "./src/index.ts",
-      "default": "./src/index.ts"
+      "default": "./dist/index.js"
     }
   }
 }
