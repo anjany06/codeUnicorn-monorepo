@@ -1,4 +1,4 @@
-import { inngest } from "../client";
+import { inngest } from "../client.js";
 import {
   getPullRequestDiff,
   postReviewComment,
@@ -336,7 +336,7 @@ ${customRulesText}`;
         owner,
         repo,
         prNumber,
-        prData.headSha,
+        (prData as any).headSha as string,
         comments,
         patchMap
       );
