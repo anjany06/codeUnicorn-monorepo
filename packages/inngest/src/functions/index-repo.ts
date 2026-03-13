@@ -1,5 +1,5 @@
 import { prisma } from "@codeunicorn/database";
-import { inngest } from "../client.js";
+import { inngest } from "../client";
 import { getRepoFileContents, getHeadSha } from "@codeunicorn/github";
 import { indexCodebase } from "@codeunicorn/ai";
 

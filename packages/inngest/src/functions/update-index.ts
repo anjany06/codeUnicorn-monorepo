@@ -1,4 +1,4 @@
-import { inngest } from "../client.js";
+import { inngest } from "../client";
 import { getFileContent } from "@codeunicorn/github";
 import { updateCodebaseIndex } from "@codeunicorn/ai";
 import { prisma } from "@codeunicorn/database";

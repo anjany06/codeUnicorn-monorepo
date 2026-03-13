@@ -1,4 +1,4 @@
-import { inngest } from "../client.js";
+import { inngest } from "../client";
 import { prisma } from "@codeunicorn/database";
 import { generateDocMarkdown } from "@codeunicorn/ai";
 
