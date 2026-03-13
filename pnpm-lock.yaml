@@ -447,6 +447,9 @@ importers:
 
   packages/github:
     dependencies:
+      '@codeunicorn/types':
+        specifier: workspace:*
+        version: link:../types
       '@octokit/rest':
         specifier: ^21.0.0
         version: 21.1.1
@@ -454,6 +457,9 @@ importers:
         specifier: ^4.1.0
         version: 4.1.4
     devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.37
       typescript:
         specifier: ^5.7.0
         version: 5.9.2
@@ -11965,7 +11971,7 @@ snapshots:
       '@protobufjs/path': 1.1.2
       '@protobufjs/pool': 1.1.0
       '@protobufjs/utf8': 1.1.0
-      '@types/node': 25.3.5
+      '@types/node': 20.19.37
       long: 5.3.2
 
   proxy-addr@2.0.7:
