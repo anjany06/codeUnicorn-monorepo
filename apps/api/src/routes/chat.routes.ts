@@ -2,7 +2,7 @@ import { Router } from "express";
 import { authMiddleware } from "../middleware/auth.middleware";
 import * as chatController from "../controllers/chat.controller";
 
-export const chatRouter = Router();
+export const chatRouter: Router = Router();
 
 // Chat sessions
 chatRouter.get("/sessions", authMiddleware, chatController.getSessions);

@@ -9,7 +9,7 @@ export async function getConfig(req: AuthRequest, res: Response) {
     const userId = req.user!.id;
     const { repositoryId } = req.params;
 
-    const config = await configService.getReviewConfig(repositoryId, userId);
+    const config = await configService.getReviewConfig(repositoryId as string, userId);
 
     res.json({ success: true, data: config });
   } catch (error: any) {
@@ -23,7 +23,7 @@ export async function updateConfig(req: AuthRequest, res: Response) {
     const userId = req.user!.id;
     const { repositoryId } = req.params;
 
-    const config = await configService.upsertReviewConfig(repositoryId, userId, req.body);
+    const config = await configService.upsertReviewConfig(repositoryId as string, userId, req.body);
 
     res.json({ success: true, data: config });
   } catch (error: any) {

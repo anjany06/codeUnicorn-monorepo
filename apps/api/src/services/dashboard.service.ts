@@ -2,7 +2,7 @@ import { prisma } from "@codeunicorn/database";
 import { Octokit } from "@octokit/rest";
 
 // Helper to get GitHub token
-export async function getGithubToken(userId: string): Promise<string | null> {
+export async function getGithubToken(userId: string): Promise<string> {
   const account = await prisma.account.findFirst({
     where: {
       userId,
@@ -10,12 +10,12 @@ export async function getGithubToken(userId: string): Promise<string | null> {
     },
   });
 
-  if(!account?.accessToken){
+  if (!account?.accessToken) {
     console.error("No GitHub access token found for user:", userId);
     throw new Error("No GitHub access token found");
   }
 
-  return account?.accessToken || null;
+  return account.accessToken;
 }
 
 // Fetch user contribution from GitHub GraphQL API
@@ -63,6 +63,9 @@ export async function getDashboardStats(userId: string) {
 
   // Get user's GitHub username
   const { data: user } = await octokit.rest.users.getAuthenticated();
+  if (!user.login) {
+    throw new Error("GitHub username not found");
+  }
 
   // Fetch total connected repo from DB
   const totalRepos = await prisma.repository.count({
@@ -118,6 +121,9 @@ export async function getMonthlyActivity(userId: string) {
 
   const octokit = new Octokit({ auth: token });
   const { data: user } = await octokit.rest.users.getAuthenticated();
+  if (!user.login) {
+    throw new Error("GitHub username not found");
+  }
 
   // Fetch user's commits
   const calendar = await fetchUserContribution(token, user.login);
@@ -283,8 +289,14 @@ export function parseReviewFindings(text: string): {
 export async function getDeveloperMetrics(userId: string) {
   try {
     const token = await getGithubToken(userId);
+    if (!token) {
+      throw new Error("GitHub token not found");
+    }
     const octokit = new Octokit({ auth: token });
     const { data: ghUser } = await octokit.rest.users.getAuthenticated();
+    if (!ghUser.login) {
+      throw new Error("GitHub username not found");
+    }
 
     const now = new Date();
     const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -519,6 +531,9 @@ export async function getContributionGraph(userId: string): Promise<Contribution
 
     const octokit = new Octokit({ auth: token });
     const { data: ghUser } = await octokit.rest.users.getAuthenticated();
+    if (!ghUser.login) {
+      throw new Error("GitHub username not found");
+    }
 
     const calendar = await fetchUserContribution(token, ghUser.login);
     if (!calendar) return null;
