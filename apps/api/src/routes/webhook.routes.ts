@@ -92,7 +92,7 @@ webhookRouter.post("/github", async (req, res) => {
       }
     }
 
-    // ─── Feature 3: Handle push event for delta re-indexing ────────────────
+    //  Feature 3: Handle push event for delta re-indexing 
     if (event === "push") {
       const repoFullName = body.repository?.full_name;
       const ref = body.ref; // e.g. "refs/heads/main"
@@ -147,7 +147,7 @@ webhookRouter.post("/github", async (req, res) => {
       }
     }
 
-    // ─── Feature B: Handle issues event for AI analysis ──────────────────────
+    //  Feature B: Handle issues event for AI analysis
     if (event === "issues") {
       const action = body.action;
       if (action === "opened") {

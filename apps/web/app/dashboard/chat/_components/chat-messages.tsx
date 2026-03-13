@@ -1,3 +1,5 @@
+"use client";
+
 import { Bot, User } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { ChatMarkdown } from "./chat-markdown";

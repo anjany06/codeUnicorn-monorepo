@@ -1,3 +1,5 @@
+"use client";
+
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 

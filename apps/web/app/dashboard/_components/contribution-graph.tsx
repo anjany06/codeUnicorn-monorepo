@@ -357,7 +357,10 @@ function PortfolioDialog({
           <DialogDescription>
             Copy one of the snippets below and paste it in your portfolio or
             README. The{" "}
-            <strong>{THEMES.find((t) => t.id === themeId)?.name}</strong> theme
+            <strong>
+              {THEMES.find((t) => t.id === themeId)?.name || "GitHub"}
+            </strong>{" "}
+            theme
             will be applied.
           </DialogDescription>
         </DialogHeader>
@@ -425,7 +428,7 @@ export function ContributionGraph({
   }, []);
 
   const theme = useMemo(
-    () => THEMES.find((t) => t.id === themeId) ?? THEMES[0],
+    () => THEMES.find((t) => t.id === themeId) || THEMES[0]!,
     [themeId],
   );
 
@@ -437,11 +440,14 @@ export function ContributionGraph({
     const markers: { label: string; col: number }[] = [];
     let lastMonth = -1;
     data.weeks.forEach((week, i) => {
-      if (!week.length) return;
+      if (!week.length || !week[0]) return;
       const m = new Date(week[0].date).getMonth();
       if (m !== lastMonth) {
-        markers.push({ label: MONTH_LABELS[m], col: i });
-        lastMonth = m;
+        const label = MONTH_LABELS[m];
+        if (label) {
+          markers.push({ label, col: i });
+          lastMonth = m;
+        }
       }
     });
     return markers;

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
@@ -77,11 +77,14 @@ export default function EmbedPage() {
     let lastMonth = -1;
 
     data.weeks.forEach((week, i) => {
-      if (!week.length) return;
+      if (!week.length || !week[0]) return;
       const month = new Date(week[0].date).getMonth();
       if (month !== lastMonth) {
-        markers.push({ label: MONTH_LABELS[month] ?? "", col: i });
-        lastMonth = month;
+        const label = MONTH_LABELS[month];
+        if (label) {
+          markers.push({ label, col: i });
+          lastMonth = month;
+        }
       }
     });
 

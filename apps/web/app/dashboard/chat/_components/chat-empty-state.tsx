@@ -1,3 +1,5 @@
+"use client";
+
 import { Bot, Plus } from "lucide-react";
 import { ConnectButton } from "../../repository/_components/connect-button";
 

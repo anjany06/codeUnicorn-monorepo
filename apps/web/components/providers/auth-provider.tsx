@@ -7,7 +7,7 @@ interface User {
   id: string;
   name: string;
   email: string;
-  image?: string;
+  image?: string | null;
 }
 
 interface AuthContextType {
@@ -26,7 +26,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { data: session, isPending } = useSession();
 
   const value: AuthContextType = {
-    user: session?.user || null,
+    user: session?.user
+      ? {
+          id: session.user.id,
+          name: session.user.name,
+          email: session.user.email,
+          image: session.user.image,
+        }
+      : null,
     isLoading: isPending,
     isAuthenticated: !!session?.user,
   };
