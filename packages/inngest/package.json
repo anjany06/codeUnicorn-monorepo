@@ -1,13 +1,13 @@
 {
   "name": "@codeunicorn/inngest",
   "version": "1.0.0",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-     "@ai-sdk/google": "^3.0.10",
+    "@ai-sdk/google": "^3.0.10",
     "@codeunicorn/ai": "workspace:*",
     "@codeunicorn/database": "workspace:*",
     "@codeunicorn/github": "workspace:*",
@@ -22,8 +22,8 @@
   },
   "exports": {
     ".": {
-      "types": "./src/index.ts",
-      "default": "./src/index.ts"
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     }
   }
 }
