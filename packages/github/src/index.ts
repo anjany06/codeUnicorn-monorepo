@@ -1,8 +1,36 @@
 import { Octokit } from "@octokit/rest";
-import { GitHubFile, PullRequestDiff, PullRequestFile } from "../../types/src";
+
+export interface GitHubFile {
+  path: string;
+  content: string;
+}
+
+export interface PullRequestFile {
+  filename: string;
+  status: "added" | "modified" | "removed" | "renamed" | "copied" | "changed" | "unchanged";
+  patch: string;
+  sha: string;
+  additions: number;
+  deletions: number;
+  changes: number;
+}
+
+export interface PullRequestDiff {
+  title: string;
+  description: string | null;
+  diff: string;
+  files: PullRequestFile[];
+  headSha: string;
+}
+
+/** Decode a base64 string to UTF-8 without depending on Node's Buffer */
+function decodeBase64(base64: string): string {
+  const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+  return new TextDecoder("utf-8").decode(bytes);
+}
 
 
-export function createOctokit(token: string) {
+export function createOctokit(token: string): Octokit {
   return new Octokit({ auth: token });
 }
 
@@ -27,7 +55,7 @@ export async function getRepoFileContents(
         return [
           {
             path: data.path,
-            content: Buffer.from(data.content, "base64").toString("utf-8"),
+            content: decodeBase64(data.content),
           },
         ];
       }
@@ -71,7 +99,7 @@ export async function getRepoFileContents(
           ) {
             files.push({
               path: item.path,
-              content: Buffer.from(fileData.content, "base64").toString("utf-8"),
+              content: decodeBase64(fileData.content),
             });
           }
         } catch (error) {
@@ -242,7 +270,7 @@ export function parseDiffPositions(patch: string): Map<number, { side: "LEFT" | 
 
   for (const line of lines) {
     const hunkMatch = line.match(/^@@\s+-(\d+)(?:,\d+)?\s+\+(\d+)(?:,\d+)?\s+@@/);
-    if (hunkMatch) {
+    if (hunkMatch && hunkMatch[1] !== undefined && hunkMatch[2] !== undefined) {
       oldLine = parseInt(hunkMatch[1], 10);
       newLine = parseInt(hunkMatch[2], 10);
       diffPosition++;
@@ -409,7 +437,7 @@ export async function getFileContent(
       ...(ref ? { ref } : {}),
     });
     if (!Array.isArray(data) && data.type === "file" && data.content) {
-      return Buffer.from(data.content, "base64").toString("utf-8");
+      return decodeBase64(data.content);
     }
     return null;
   } catch {

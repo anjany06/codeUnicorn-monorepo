@@ -3,14 +3,17 @@
   "version": "1.0.0",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
+  "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@codeunicorn/types": "workspace:*",
     "@octokit/rest": "^21.0.0",
     "octokit": "^4.1.0"
   },
   "devDependencies": {
+    "@types/node": "^20.0.0",
     "typescript": "^5.7.0"
   },
   "exports": {
