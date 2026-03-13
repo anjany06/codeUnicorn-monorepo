@@ -14,7 +14,7 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export async function generateEmbedding(text: string) {
+export async function generateEmbedding(text: string): Promise<number[]> {
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     try {
       const { embedding } = await embed({
@@ -53,6 +53,7 @@ export async function indexCodebase(repoId:string, files:{path:string, content:s
 
   for (let i = 0; i < files.length; i++){
     const file = files[i];
+    if (!file) continue;
     const content = `File : ${file.path}\n\n${file.content}`;
 
     const truncatedContent = content.slice(0, 8000); // Truncate to first 8000 characters
@@ -131,6 +132,7 @@ export async function updateCodebaseIndex(
     const vectors = [];
     for (let i = 0; i < changedFiles.length; i++) {
       const file = changedFiles[i];
+      if (!file) continue;
       const content = `File : ${file.path}\n\n${file.content}`;
       const truncatedContent = content.slice(0, 8000);
       try {
@@ -214,9 +216,11 @@ export async function generateDocMarkdown(
 
   // Retrieve context for each query and combine
   const contextChunks: string[] = [];
-  for (const query of queries) {
-    const results = await retrieveContext(query, repoId, 5);
-    contextChunks.push(...results);
+  if (queries) {
+    for (const query of queries) {
+      const results = await retrieveContext(query, repoId, 5);
+      contextChunks.push(...results);
+    }
   }
 
   // Deduplicate by content prefix
