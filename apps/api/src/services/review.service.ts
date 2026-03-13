@@ -16,7 +16,7 @@ export async function getReviews(userId: string) {
     take: 50,
   });
 
-  return reviews.map((review) => ({
+  return reviews.map((review: any) => ({
     ...review,
     repository: {
       ...review.repository,

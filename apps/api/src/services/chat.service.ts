@@ -226,14 +226,14 @@ GUIDELINES:
 - Be concise but thorough
 - When suggesting changes, explain the reasoning`;
 
-  const conversationMessages = recentMessages.map((msg) => ({
+  const conversationMessages = recentMessages.map((msg: any) => ({
     role: msg.role as "user" | "assistant",
     content: msg.content,
   }));
 
   // Stream the response using Vercel AI SDK
   const result = streamText({
-    model: google("gemini-2.5-flash"),
+    model: google("gemini-1.5-flash"),
     system: systemPrompt,
     messages: conversationMessages,
   });

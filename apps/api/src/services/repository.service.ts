@@ -35,7 +35,7 @@ export async function fetchRepositories(userId: string, page: number = 1, perPag
     where: { userId },
   });
 
-  const connectedRepoIds = new Set(dbRepos.map((repo) => repo.githubId));
+  const connectedRepoIds = new Set(dbRepos.map((repo: any) => repo.githubId));
 
   return githubRepos.map((repo: any) => ({
     id: repo.id,
@@ -170,7 +170,7 @@ export async function getConnectedRepositories(userId: string) {
     orderBy: { createdAt: "desc" },
   });
 
-  return repositories.map((repo) => ({
+  return repositories.map((repo: any) => ({
     ...repo,
     githubId: repo.githubId.toString(),
     createdAt: repo.createdAt.toISOString(),
@@ -247,7 +247,7 @@ export async function disconnectAllRepositories(userId: string) {
 
   // Delete all webhooks in parallel
   await Promise.all(
-    repositories.map((repo) => deleteWebhook(userId, repo.owner, repo.name))
+    repositories.map((repo: any) => deleteWebhook(userId, repo.owner, repo.name))
   );
 
   // Delete all repositories from database

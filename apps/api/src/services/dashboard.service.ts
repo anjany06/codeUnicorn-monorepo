@@ -192,7 +192,7 @@ export async function getMonthlyActivity(userId: string) {
     select: { createdAt: true },
   });
 
-  reviews.forEach((review) => {
+  reviews.forEach((review: any) => {
     const date = new Date(review.createdAt);
     if (date < sixMonthsAgo) return;
 

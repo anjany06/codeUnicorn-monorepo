@@ -247,7 +247,7 @@ export const generateReview = inngest.createFunction(
         ? `The primary language of this project is ${config.language}.`
         : "";
 
-      const changedFilePaths = prData.files.map((f) => f.filename).join(", ");
+      const changedFilePaths = (prData.files as any[]).map((f: any) => f.filename).join(", ");
 
       const prompt = `You are an expert code reviewer. Analyze the following pull request and return a detailed, constructive review.
 
@@ -312,7 +312,7 @@ ${customRulesText}`;
 
       // Build patch map for diff position calculation
       const patchMap = new Map<string, string>();
-      for (const file of prData.files) {
+      for (const file of (prData.files as any[])) {
         patchMap.set(file.filename, file.patch);
       }
 
@@ -332,7 +332,7 @@ ${customRulesText}`;
       });
 
       await postLineReviewComments(
-        prData.token,
+        (prData as any).token as string,
         owner,
         repo,
         prNumber,
@@ -348,7 +348,7 @@ ${customRulesText}`;
         ...structuredReview,
         lineComments: filteredComments,
       });
-      await postReviewComment(prData.token, owner, repo, prNumber, summaryMarkdown);
+      await postReviewComment((prData as any).token as string, owner, repo, prNumber, summaryMarkdown);
     });
 
     // Step 8: Save review to database
