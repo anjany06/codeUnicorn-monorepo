@@ -4,7 +4,7 @@ import { createAuthClient } from "better-auth/react";
 // Note: polarClient() plugin is intentionally excluded here to avoid
 // it calling React's useContext at module-init time which crashes SSR prerendering.
 export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000",
+  baseURL: typeof window !== "undefined" ? window.location.origin : process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
   basePath: "/api/auth",
 });
 
