@@ -5,17 +5,15 @@ import { redirect } from "next/navigation";
 
 const DashboardLayout = async ({ children }: { children: React.ReactNode }) => {
   const headersList = await headers();
-  const cookie = headersList.get("cookie");
+  const host = headersList.get("host");
+  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
 
-  const res = await fetch(
-    "/api/auth/get-session",
-    {
-      headers: {
-        cookie: cookie ?? "",
-      },
-      cache: "no-store",
-    }
-  );
+  const res = await fetch(`${protocol}://${host}/api/auth/get-session`, {
+    headers: {
+      cookie: headersList.get("cookie") ?? "",
+    },
+    cache: "no-store",
+  });
 
   const data = await res.json();
 
