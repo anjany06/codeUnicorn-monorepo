@@ -13,7 +13,7 @@ export function SignInButton() {
     try {
       await signIn.social({
         provider: "github",
-        callbackURL: "http://localhost:3000/dashboard", // Redirect after login
+        callbackURL: "/dashboard", // Redirect after login
       });
     } catch (error) {
       console.error("Sign in error:", error);
