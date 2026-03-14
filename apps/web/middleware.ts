@@ -1,30 +1,31 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// Routes that require authentication
 const protectedRoutes = ["/dashboard", "/settings", "/repositories"];
-
-// Routes that should redirect to dashboard if authenticated
 const authRoutes = ["/login", "/signup"];
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  console.log("cookies:", request.cookies.getAll());
 
-  // Check for session cookie (Better Auth uses this)
-  const sessionCookie =
-    request.cookies.get("__Secure-better-auth.session_token") ||
-    request.cookies.get("better-auth.session_token");
-  const isAuthenticated = !!sessionCookie;
+  // ask backend if session exists
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/auth/get-session`,
+    {
+      headers: {
+        cookie: request.headers.get("cookie") || "",
+      },
+    }
+  );
 
-  // Redirect authenticated users away from auth pages
+  const data = await res.json();
+  const isAuthenticated = !!data.session;
+
   if (authRoutes.some((route) => pathname.startsWith(route))) {
     if (isAuthenticated) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
   }
 
-  // Protect routes that require authentication
   if (protectedRoutes.some((route) => pathname.startsWith(route))) {
     if (!isAuthenticated) {
       const loginUrl = new URL("/login", request.url);
@@ -38,7 +39,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/",
     "/dashboard/:path*",
     "/settings/:path*",
     "/repositories/:path*",
