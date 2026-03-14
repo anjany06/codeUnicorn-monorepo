@@ -8,7 +8,7 @@ const DashboardLayout = async ({ children }: { children: React.ReactNode }) => {
   const cookie = headersList.get("cookie");
 
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/auth/get-session`,
+    "/api/auth/get-session",
     {
       headers: {
         cookie: cookie ?? "",
