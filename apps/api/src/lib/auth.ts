@@ -50,11 +50,11 @@ export const auth = betterAuth({
   // Advanced options
   advanced: {
     crossSubDomainCookies: {
-      enabled: false, // Set true if using subdomains
+      enabled: false, 
     },
     defaultCookieAttributes: {
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
+      sameSite: "none", // Must be "none" for cross-domain (Vercel <-> Render)
+      secure: true, // Required when sameSite is "none"
       httpOnly: true,
     },
   },
