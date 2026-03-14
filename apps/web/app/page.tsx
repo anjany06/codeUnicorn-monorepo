@@ -1,8 +1,25 @@
-// app/page.tsx - Server Component
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-export default function Home() {
-  // This page only renders if middleware allows it
-  // If authenticated, show dashboard content or redirect
-  redirect("/dashboard");
+export default async function Home() {
+  const headersList = await headers();
+  const cookie = headersList.get("cookie");
+
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/auth/get-session`,
+    {
+      headers: {
+        cookie: cookie ?? "",
+      },
+      cache: "no-store",
+    }
+  );
+
+  const data = await res.json();
+
+  if (data?.session) {
+    redirect("/dashboard");
+  }
+
+  redirect("/login");
 }

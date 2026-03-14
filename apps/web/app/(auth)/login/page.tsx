@@ -1,8 +1,28 @@
 import LoginUI from "@/components/auth/login-ui";
-import { SignInButton } from "@/components/auth/sign-in-button";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import React from "react";
 
-const LoginPage = () => {
+const LoginPage = async () => {
+  const headersList = await headers();
+  const cookie = headersList.get("cookie");
+
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/auth/get-session`,
+    {
+      headers: {
+        cookie: cookie ?? "",
+      },
+      cache: "no-store",
+    }
+  );
+
+  const data = await res.json();
+
+  if (data?.session) {
+    redirect("/dashboard");
+  }
+
   return (
     <div>
       <LoginUI />
