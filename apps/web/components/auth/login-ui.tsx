@@ -16,7 +16,7 @@ export default function LoginUI() {
     try {
       await signIn.social({
         provider: "github",
-        callbackURL: "/dashboard",
+        callbackURL: `${window.location.origin}/dashboard`,
       });
     } catch (error) {
       console.error("Error during GitHub sign-in:", error);
