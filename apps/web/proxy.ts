@@ -11,7 +11,9 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Check for session cookie (Better Auth uses this)
-  const sessionCookie = request.cookies.get("better-auth.session_token");
+const sessionCookie =
+    request.cookies.get("__Secure-better-auth.session_token") ||
+    request.cookies.get("better-auth.session_token");
   const isAuthenticated = !!sessionCookie;
 
   // Redirect authenticated users away from auth pages
