@@ -1,24 +1,36 @@
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "@/lib/auth-client";
 import LoginUI from "@/components/auth/login-ui";
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
-import React from "react";
 
-const LoginPage = async () => {
-  const headersList = await headers();
-  const host = headersList.get("host");
-  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
+const LoginPage = () => {
+  const { data: session, isPending } = useSession();
+  const router = useRouter();
 
-  const res = await fetch(`${protocol}://${host}/api/auth/get-session`, {
-    headers: {
-      cookie: headersList.get("cookie") ?? "",
-    },
-    cache: "no-store",
-  });
+  useEffect(() => {
+    if (!isPending && session?.user) {
+      router.replace("/dashboard");
+    }
+  }, [session, isPending, router]);
 
-  const data = await res.json();
+  // Show a minimal loading state while checking session
+  if (isPending) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+      </div>
+    );
+  }
 
-  if (data?.session) {
-    redirect("/dashboard");
+  // Already authenticated → will redirect via useEffect
+  if (session?.user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+      </div>
+    );
   }
 
   return (

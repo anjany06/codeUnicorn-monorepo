@@ -41,10 +41,9 @@ export const auth = betterAuth({
     },
   },
   
-  // Important for cross-origin requests
+  // Trusted origins for CSRF protection
   trustedOrigins: [
     process.env.FRONTEND_URL || "http://localhost:3000",
-    "https://implicit-coldly-maryrose.ngrok-free.dev",
   ],
   
   // Advanced options
@@ -53,8 +52,8 @@ export const auth = betterAuth({
       enabled: false, 
     },
     defaultCookieAttributes: {
-      sameSite: "none", // Must be "none" for cross-domain (Vercel <-> Render)
-      secure: true, // Required when sameSite is "none"
+      sameSite: "lax",   // "lax" works because auth goes through the Vercel proxy (same origin)
+      secure: true,      // Always use secure cookies in production
       httpOnly: true,
     },
   },

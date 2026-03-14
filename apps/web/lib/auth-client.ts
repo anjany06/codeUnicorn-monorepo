@@ -1,10 +1,11 @@
 import { createAuthClient } from "better-auth/react";
 
-// Create auth client pointing to Express backend
-// Note: polarClient() plugin is intentionally excluded here to avoid
-// it calling React's useContext at module-init time which crashes SSR prerendering.
+// Create auth client that goes through the Next.js rewrite proxy.
+// By NOT setting baseURL, the client defaults to the current origin,
+// so all auth requests go to VERCEL_URL/api/auth/* → proxied to the backend.
+// This ensures cookies are set on the Vercel domain (same-origin),
+// which fixes SSR session checks that can't access cross-domain cookies.
 export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000",
   basePath: "/api/auth",
 });
 
