@@ -85,6 +85,9 @@ export async function sendMessage(req: AuthRequest, res: Response) {
     res.setHeader("Connection", "keep-alive");
     res.setHeader("X-Accel-Buffering", "no");
 
+    // Flush headers immediately for proxy bypass
+    res.flushHeaders();
+
     let fullResponse = "";
 
     // Stream the response

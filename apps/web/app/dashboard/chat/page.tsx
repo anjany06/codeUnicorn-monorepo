@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
@@ -121,6 +121,7 @@ export default function ChatPage() {
           break;
         } else if (event.type === "error") {
           console.error("Stream error:", event.content);
+          setSendError(event.content || "Failed to stream message. Please try again.");
           break;
         }
       }

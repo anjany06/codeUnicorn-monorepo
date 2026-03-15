@@ -226,10 +226,16 @@ GUIDELINES:
 - Be concise but thorough
 - When suggesting changes, explain the reasoning`;
 
-  const conversationMessages = recentMessages.map((msg: any) => ({
-    role: msg.role as "user" | "assistant",
-    content: msg.content,
-  }));
+  const conversationMessages = recentMessages.reduce((acc: any[], msg: any) => {
+    const role = msg.role as "user" | "assistant";
+    // If the last message has the same role, append to its content (to fix Gemini contiguous roles error)
+    if (acc.length > 0 && acc[acc.length - 1].role === role) {
+      acc[acc.length - 1].content += "\n\n" + msg.content;
+    } else {
+      acc.push({ role, content: msg.content });
+    }
+    return acc;
+  }, []);
 
   // Stream the response using Vercel AI SDK
   const result = streamText({
