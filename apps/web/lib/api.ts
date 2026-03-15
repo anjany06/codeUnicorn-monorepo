@@ -1,4 +1,11 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+function getApiUrl() {
+  if (typeof window !== "undefined") {
+    // On the client, use relative paths to trigger Next.js rewrites and send same-origin cookies
+    return "";
+  }
+  // On the server, absolute paths are required
+  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+}
 
 interface ApiResponse<T> {
   success: boolean;
@@ -11,7 +18,8 @@ async function fetchApi<T>(
   endpoint: string,
   options?: RequestInit
 ): Promise<ApiResponse<T>> {
-  const res = await fetch(`${API_URL}${endpoint}`, {
+  const endpointUrl = `${getApiUrl()}${endpoint}`;
+  const res = await fetch(endpointUrl, {
     ...options,
     credentials: "include", // Important for sending cookies
     headers: {
@@ -27,7 +35,8 @@ async function fetchPublicApi<T>(
   endpoint: string,
   options?: RequestInit
 ): Promise<ApiResponse<T>> {
-  const res = await fetch(`${API_URL}${endpoint}`, {
+  const endpointUrl = `${getApiUrl()}${endpoint}`;
+  const res = await fetch(endpointUrl, {
     ...options,
     credentials: "omit",
     headers: options?.headers,
@@ -263,7 +272,7 @@ export async function* streamChatMessage(
   sessionId: string,
   message: string
 ): AsyncGenerator<{ type: "chunk" | "done" | "error"; content: string }> {
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+  const API_BASE = getApiUrl();
   const response = await fetch(`${API_BASE}/api/chat/sessions/${sessionId}/messages`, {
     method: "POST",
     credentials: "include",
