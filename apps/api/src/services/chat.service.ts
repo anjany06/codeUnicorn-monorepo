@@ -78,7 +78,7 @@ async function enforceChatRateLimit(userId: string): Promise<void> {
   });
 }
 
-// ─── Feature 2: AI Codebase Chat ────────────────────────────────────────────
+// Feature 2: AI Codebase Chat
 
 export async function createChatSession(userId: string, repositoryId: string, title?: string) {
   // Verify the user owns this repository
@@ -239,7 +239,7 @@ GUIDELINES:
 
   // Stream the response using Vercel AI SDK
   const result = streamText({
-    model: google("gemini-1.5-flash"),
+    model: google("gemini-2.5-flash"),
     system: systemPrompt,
     messages: conversationMessages,
   });
