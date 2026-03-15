@@ -82,7 +82,7 @@ export async function connectRepository(
   const octokit = new Octokit({ auth: token });
 
   // Create webhook
-  const webhookUrl = `${process.env.API_NROK_URL}/api/webhooks/github`;
+  const webhookUrl = `${process.env.API_URL}/api/webhooks/github`;
 
   try {
     // Check if webhook already exists
@@ -191,7 +191,7 @@ export async function deleteWebhook(
   }
 
   const octokit = new Octokit({ auth: token });
-  const webhookUrl = `${process.env.API_NROK_URL}/api/webhooks/github`;
+  const webhookUrl = `${process.env.API_URL}/api/webhooks/github`;
 
   try {
     const { data: hooks } = await octokit.rest.repos.listWebhooks({

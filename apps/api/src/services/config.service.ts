@@ -105,7 +105,7 @@ export async function upsertReviewConfig(
       const token = await getGithubToken(userId);
       if (token) {
         const octokit = new Octokit({ auth: token });
-        const webhookUrl = `${process.env.API_NROK_URL}/api/webhooks/github`;
+        const webhookUrl = `${process.env.API_URL}/api/webhooks/github`;
         const { data: hooks } = await octokit.rest.repos.listWebhooks({
           owner: repository.owner,
           repo: repository.name,
