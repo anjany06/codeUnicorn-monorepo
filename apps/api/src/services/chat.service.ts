@@ -102,7 +102,7 @@ export async function createChatSession(userId: string, repositoryId: string, ti
 }
 
 export async function getChatSessions(userId: string, repositoryId?: string) {
-  const where: any = { userId };
+  const where: any = { userId, deletedAt: null }; // Exclude soft-deleted sessions
   if (repositoryId) where.repositoryId = repositoryId;
 
   const sessions = await prisma.chatSession.findMany({
@@ -123,9 +123,9 @@ export async function getChatSessions(userId: string, repositoryId?: string) {
 }
 
 export async function getChatMessages(sessionId: string, userId: string) {
-  // Verify ownership
+  // Verify ownership (exclude soft-deleted sessions)
   const session = await prisma.chatSession.findFirst({
-    where: { id: sessionId, userId },
+    where: { id: sessionId, userId, deletedAt: null },
   });
 
   if (!session) {
@@ -142,15 +142,17 @@ export async function getChatMessages(sessionId: string, userId: string) {
 
 export async function deleteChatSession(sessionId: string, userId: string) {
   const session = await prisma.chatSession.findFirst({
-    where: { id: sessionId, userId },
+    where: { id: sessionId, userId, deletedAt: null },
   });
 
   if (!session) {
     throw new Error("Chat session not found");
   }
 
-  await prisma.chatSession.delete({
+  // Soft-delete: keep the session & messages so they still count towards rate limits
+  await prisma.chatSession.update({
     where: { id: sessionId },
+    data: { deletedAt: new Date() },
   });
 
   return { success: true };
@@ -167,9 +169,9 @@ export async function streamChatResponse(
 ) : Promise<{ result: ReturnType<typeof streamText>; sessionId: string }> {
   await enforceChatRateLimit(userId);
 
-  // Verify ownership and get repository info
+  // Verify ownership and get repository info (exclude soft-deleted sessions)
   const session = await prisma.chatSession.findFirst({
-    where: { id: sessionId, userId },
+    where: { id: sessionId, userId, deletedAt: null },
     include: {
       repository: { select: { name: true, owner: true, fullName: true } },
     },

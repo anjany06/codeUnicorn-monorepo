@@ -4,7 +4,6 @@ import { inngest } from "../lib/inngest";
 import {
   canConnectRepository,
   incrementRepositoryCount,
-  decrementRepositoryCount,
 } from "./subscription.service";
 
 export async function getGithubToken(userId: string): Promise<string | null> {
@@ -234,8 +233,8 @@ export async function disconnectRepository(userId: string, repositoryId: string)
     where: { id: repositoryId },
   });
 
-  // Track usage
-  await decrementRepositoryCount(userId);
+  // Note: Do NOT decrement repositoryCount — it's a lifetime total
+  // to prevent bypass by connect/disconnect cycling.
 
   return { success: true };
 }
@@ -255,12 +254,8 @@ export async function disconnectAllRepositories(userId: string) {
     where: { userId },
   });
 
-  // Reset repository count to 0
-  await prisma.userUsage.upsert({
-    where: { userId },
-    create: { userId, repositoryCount: 0, reviewCounts: {} },
-    update: { repositoryCount: 0 },
-  });
+  // Note: Do NOT reset repositoryCount — it's a lifetime total
+  // to prevent bypass by connect/disconnect cycling.
 
   return { success: true, count: result.count };
 }
