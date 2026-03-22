@@ -220,6 +220,11 @@ body {
     letter-spacing: var(--tracking-normal);
   }
 
+  ::selection {
+    background-color: var(--primary);
+    color: var(--background);
+  }
+
   h1,
   h2,
   h3,

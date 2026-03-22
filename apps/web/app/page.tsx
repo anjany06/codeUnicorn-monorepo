@@ -1,6 +1,8 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { LandingPage } from "@/components/landing-page";
+
 export default async function Home() {
   const headersList = await headers();
   const host = headersList.get("host");
@@ -19,5 +21,5 @@ export default async function Home() {
     redirect("/dashboard");
   }
 
-  redirect("/login");
+  return <LandingPage />;
 }
