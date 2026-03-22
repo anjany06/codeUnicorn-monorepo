@@ -215,6 +215,7 @@ body {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
     letter-spacing: var(--tracking-normal);
@@ -241,9 +242,11 @@ body {
       transform: translateX(0) skewX(-18deg);
       opacity: 0;
     }
+
     20% {
       opacity: 1;
     }
+
     100% {
       transform: translateX(360%) skewX(-18deg);
       opacity: 0;

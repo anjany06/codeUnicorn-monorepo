@@ -37,7 +37,7 @@ export default function RootLayout({
       className={`dark ${inter.variable} ${instrumentSerif.variable} ${geistMono.variable}`}
       suppressHydrationWarning
     >
-      <body className={instrumentSerif.className}>
+      <body className="dark">
         <QueryProvider>
           <AuthProvider>
             <ThemeProvider
