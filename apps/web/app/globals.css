@@ -37,9 +37,9 @@
   --sidebar-accent-foreground: oklch(0.2435 0 0);
   --sidebar-border: oklch(0.9037 0 0);
   --sidebar-ring: oklch(0.8348 0.1302 160.908);
-  --font-sans: var(--font-inter);
+  --font-sans: var(--font-instrument-serif);
   --font-serif: var(--font-instrument-serif);
-  --font-heading: var(--font-instrument-serif);
+  --font-heading: var(--font-inter);
   --font-display: var(--font-instrument-serif);
   --font-mono: var(--font-geist-mono);
   --radius: 0.5rem;
@@ -102,9 +102,9 @@
   --sidebar-accent-foreground: oklch(0.9851 0 0);
   --sidebar-border: oklch(0.2809 0 0);
   --sidebar-ring: oklch(0.8003 0.1821 151.711);
-  --font-sans: var(--font-inter);
+  --font-sans: var(--font-instrument-serif);
   --font-serif: var(--font-instrument-serif);
-  --font-heading: var(--font-instrument-serif);
+  --font-heading: var(--font-inter);
   --font-display: var(--font-instrument-serif);
   --font-mono: var(--font-geist-mono);
   --radius: 0.5rem;
@@ -167,10 +167,10 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --font-sans: var(--font-inter);
+  --font-sans: var(--font-instrument-serif);
   --font-mono: var(--font-geist-mono);
   --font-serif: var(--font-instrument-serif);
-  --font-heading: var(--font-instrument-serif);
+  --font-heading: var(--font-inter);
   --font-display: var(--font-instrument-serif);
 
   --radius-sm: calc(var(--radius) - 4px);
