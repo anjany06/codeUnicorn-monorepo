@@ -2,7 +2,9 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import { ChevronDown, Database, FileCode, Network, Terminal as TerminalIcon, GitPullRequest, Code2, Layers, Cpu, Code, ArrowRight } from "lucide-react";
+import { ChevronDown, Database, FileCode, Network, Terminal as TerminalIcon, GitPullRequest, Code2, Layers, Cpu, Code, ArrowRight, Activity, Github } from "lucide-react";
+import { EtherealShadow } from "./ui/etheral-shadow";
+import { GlowCard } from "./ui/spotlight-card";
 
 export function LandingPage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -20,9 +22,9 @@ export function LandingPage() {
       <Navbar />
       <Hero />
       <Manifesto />
+      <Features />
       <Pulse />
       <PRAgent />
-      <Features />
       <TechnicalProof />
       <TicketPricing />
       <FAQ />
@@ -33,14 +35,16 @@ export function LandingPage() {
 
 function Navbar() {
   return (
-    <nav className="fixed top-0 left-0 w-full p-6 z-50 flex items-center justify-between mix-blend-difference">
+    <nav className="fixed top-0 left-0 w-full p-4 md:p-6 z-50 flex items-center justify-between bg-transparent backdrop-blur-lg md:backdrop-blur-none border-b border-white/5 md:border-transparent text-foreground">
       <div className="flex items-center gap-2">
-        <div className="w-4 h-4 rounded-full bg-primary" />
-        <span className="font-mono text-sm tracking-widest uppercase">CodeUnicorn</span>
+        <img src="/codeUnicorn-logo.png" alt="CodeUnicorn Logo" className="w-10 h-8 md:w-12 md:h-10 object-contain" />
+        <span className="font-heading text-sm tracking-widest uppercase hidden md:inline-block">CodeUnicorn</span>
       </div>
-      <div className="flex gap-6 items-center">
-        <a href="/login" className="text-sm font-mono hover:text-primary transition-colors">Log In</a>
-        <a href="/login" className="text-sm font-mono border border-primary/50 px-4 py-2 hover:bg-primary hover:text-background transition-all rounded-sm uppercase tracking-wider">Deploy</a>
+      <div className="flex gap-4 md:gap-6 items-center">
+        <a href="#features" className="text-sm font-mono hover:text-emerald-500 transition-colors hidden md:block">Features</a>
+        <a href="#pricing" className="text-sm font-mono hover:text-emerald-500 transition-colors hidden md:block">Pricing</a>
+        <a href="/login" className="text-xs md:text-sm font-mono hover:text-emerald-500 transition-colors ml-2 md:ml-4">Log In</a>
+        <a href="/login" className="text-xs md:text-sm font-mono border border-primary px-3 py-1.5 md:px-4 md:py-2 bg-emerald-500 hover:bg-transparent transition-all rounded-sm uppercase tracking-wider">Get Started</a>
       </div>
     </nav>
   );
@@ -54,20 +58,28 @@ function Hero() {
 
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center pt-32 pb-20 px-4">
-      <motion.div style={{ scale: scaleDown, y: yParallax }} className="text-center z-10 max-w-4xl mx-auto flex flex-col items-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/20 bg-primary/5 mb-8 text-xs font-mono text-primary">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-          </span>
-          v2.0 Early Access
+      <EtherealShadow
+        color="rgba(16, 185, 129, 0.6)"
+        animation={{ scale: 100, speed: 90 }}
+        noise={{ opacity: 1, scale: 1.2 }}
+        className="z-0"
+      />
+      <motion.div style={{ scale: scaleDown, y: yParallax }} className="text-center z-10 max-w-4xl mx-auto flex flex-col items-center relative">
+        <div className="inline-flex items-center gap-2 md:gap-3 px-3 py-1.5 md:px-5 md:py-2 rounded-full border border-white/20 bg-white/10 mb-8 text-[10px] md:text-xs font-mono text-white backdrop-blur-md shadow-[0_4px_14px_0_rgba(255,255,255,0.1)] hover:bg-white/20 hover:border-white/30 transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400"></span>
+            </span>
+            <span className="font-light text-white drop-shadow-md uppercase">Meet CodeUnicorn</span>
+          </div>
         </div>
         <h1 className="text-6xl md:text-8xl font-normal leading-tight tracking-tight mb-8">
-          GitHub Intelligence,<br />
-          <span className="font-serif italic text-primary">Evolved.</span>
+          GitHub Intelligence <br />
+          <span className="font-serif italic text-emerald-600">Platform.</span>
         </h1>
-        <p className="text-xl md:text-2xl text-foreground/70 max-w-2xl font-light mb-12">
-          PR Agents. Context-aware RAG Chat. The 12-month pulse of your engineering team.
+        <p className="text-xl md:text-2xl text-foreground/70 max-w-3xl font-light mb-12">
+          Enhance GitHub workflows by combining intelligent PR reviews, codebase understanding, and developer analytics into one unified tool.
         </p>
       </motion.div>
 
@@ -143,92 +155,196 @@ function Pulse() {
   });
 
   const xTransform = useTransform(scrollYProgress, [0, 1], ["0%", "-30%"]);
+  const xTransformReverse = useTransform(scrollYProgress, [0, 1], ["-30%", "0%"]);
+
+  const renderPulseRow = (transform: any, yOffset: number) => (
+    <motion.div style={{ x: transform }} className="flex gap-2 whitespace-nowrap min-w-max pb-2">
+      {Array.from({ length: 150 }).map((_, i) => {
+        // Deterministic pseudo-random generation to fix hydration mismatch
+        const x = Math.sin(i * 12.9898 + (yOffset * 78.233)) * 43758.5453;
+        const intensity = x - Math.floor(x);
+        const isActive = intensity > 0.6;
+        return (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.5, delay: ((i + yOffset) % 20) * 0.02 }}
+            key={i}
+            className={`w-6 h-6 rounded-[2px] ${isActive ? 'bg-primary' : 'bg-primary/5 border border-primary/10'}`}
+            style={{
+              opacity: isActive ? Number((0.4 + (intensity * 0.6)).toFixed(2)) : 0.5,
+              boxShadow: isActive ? `0 0 ${(intensity * 15).toFixed(1)}px var(--primary)` : 'none'
+            }}
+          />
+        );
+      })}
+    </motion.div>
+  );
 
   return (
     <section ref={ref} className="relative py-40 overflow-hidden bg-background">
       <div className="px-6 md:px-20 mb-16 max-w-7xl mx-auto">
-        <h3 className="font-mono text-sm tracking-widest text-primary mb-4 uppercase">The Pulse</h3>
-        <h2 className="text-4xl md:text-5xl font-light">12-Month Insights. <span className="font-serif italic text-white/50">Quantified.</span></h2>
+        <h3 className="font-mono text-sm tracking-widest text-primary mb-4 uppercase">Developer Analytics</h3>
+        <h2 className="text-4xl md:text-5xl font-light">Track Activity & Growth. <span className="font-serif italic text-white/50">Quantified.</span></h2>
+        <p className="text-foreground/50 max-w-2xl mt-4 text-lg">
+          Detailed insights into your commits, pull requests, AI reviews, and contribution graphs with customizable themes. Discover streaks, monthly trends, and performance patterns.
+        </p>
       </div>
 
-      <div className="w-full pl-6 md:pl-20">
-        <motion.div style={{ x: xTransform }} className="flex gap-2 whitespace-nowrap min-w-max pb-10">
-          {Array.from({ length: 150 }).map((_, i) => {
-            const intensity = Math.random();
-            const isActive = intensity > 0.6;
-            return (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{ duration: 0.5, delay: (i % 20) * 0.02 }}
-                key={i}
-                className={`w-6 h-6 rounded-[2px] ${isActive ? 'bg-primary' : 'bg-primary/5 border border-primary/10'}`}
-                style={{
-                  opacity: isActive ? 0.4 + (intensity * 0.6) : 0.5,
-                  boxShadow: isActive ? `0 0 ${intensity * 15}px var(--primary)` : 'none'
-                }}
-              />
-            );
-          })}
-        </motion.div>
+      <div className="w-full pl-6 md:pl-20 flex flex-col overflow-hidden">
+        {renderPulseRow(xTransform, 0)}
+        {renderPulseRow(xTransformReverse, 5)}
+        {renderPulseRow(xTransform, 10)}
+        {renderPulseRow(xTransformReverse, 15)}
       </div>
     </section>
   );
 }
 
+type LogType = "info" | "success" | "error";
+
+type HowItWorksStep = {
+  icon: any;
+  label: string;
+  title: string;
+  desc: string;
+  logs: {
+    delay: number;
+    type: LogType;
+    text: string;
+  }[];
+};
+
+const howItWorksSteps: HowItWorksStep[] = [
+  {
+    icon: Github,
+    label: "Continue with GitHub",
+    title: "Seamless Authentication.",
+    desc: "Sign in effortlessly using your GitHub account to give CodeUnicorn secure access without complex setup.",
+    logs: [
+      { delay: 1, type: "info", text: "[AUTH] Initiating OAuth flow..." },
+      { delay: 1.5, type: "info", text: "[AUTH] Exchanging auth code for tokens..." },
+      { delay: 2.5, type: "success", text: "> Profile synced. Access granted." },
+    ]
+  },
+  {
+    icon: Database,
+    label: "Connect Repo",
+    title: "Repository Indexing.",
+    desc: "Link any repository to be fully indexed. We parse your codebase architecture and map out dependencies using advanced embeddings.",
+    logs: [
+      { delay: 1, type: "info", text: "[WEBHOOK] Repository connection established." },
+      { delay: 1.5, type: "info", text: "[INDEX] Parsing AST and embedding logic..." },
+      { delay: 2.5, type: "success", text: "> Vector map generated. Codebase indexed." },
+    ]
+  },
+  {
+    icon: GitPullRequest,
+    label: "Create Pull Request",
+    title: "Automated Triggers.",
+    desc: "Simply open a pull request as you normally would. CodeUnicorn automatically catches the webhook and begins contextual analysis.",
+    logs: [
+      { delay: 1, type: "info", text: "[EVENT] Pull Request #42 opened." },
+      { delay: 1.5, type: "info", text: "[TASK] Fetching diff from target branch..." },
+      { delay: 2.0, type: "success", text: "> Diff acquired. Ready for analysis." },
+    ]
+  },
+  {
+    icon: Code,
+    label: "Reviews & Comments",
+    title: "Intelligent Feedback.",
+    desc: "AI reviews your code, identifying subtle bugs and suggesting architectural improvements directly in your GitHub PR timeline.",
+    logs: [
+      { delay: 1, type: "info", text: "[RAG] Embedding distance matched: Session logic." },
+      { delay: 1.5, type: "error", text: "> Finding: Missing cleanup on session close." },
+      { delay: 2.5, type: "success", text: "[ACTION] Review comment published to GitHub." },
+    ]
+  }
+];
+
 function PRAgent() {
+  const [activeStep, setActiveStep] = useState(0);
+
   return (
     <section className="relative py-32 px-6 md:px-20 max-w-7xl mx-auto border-t border-white/5">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+      <div className="mb-20 text-center">
+        <h2 className="text-4xl md:text-5xl font-light mb-6">How It <span className="font-serif italic text-white/50">Works</span></h2>
+        <p className="text-foreground/50 text-lg">From connection to automated reviews in four simple steps.</p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
 
         {/* Left Diagram */}
-        <div className="relative h-[600px] rounded-xl border border-white/10 p-8 flex flex-col justify-between bg-white/[0.01]">
+        <div className="relative rounded-xl border border-white/10 p-8 flex flex-col justify-between bg-white/[0.01]">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,var(--primary)_0%,transparent_40%)] opacity-[0.05]" />
-          <h3 className="font-mono text-xs uppercase tracking-widest text-primary mb-12">Inngest Workflow</h3>
+          <h3 className="font-mono text-xs uppercase tracking-widest text-primary mb-12">Workflow Integration</h3>
 
-          <div className="flex-1 flex flex-col justify-center gap-8 relative z-10 w-full max-w-sm mx-auto">
-            <WorkflowNode icon={GitPullRequest} label="PR Opened" active delay={0} />
-            <div className="w-[1px] h-12 bg-gradient-to-b from-primary to-transparent mx-auto relative hidden md:block" />
-            <WorkflowNode icon={Layers} label="Read Diff Context" delay={1} />
-            <div className="w-[1px] h-12 bg-primary/20 mx-auto relative hidden md:block" />
-            <WorkflowNode icon={Cpu} label="Agentic Analysis" delay={2} />
-            <div className="w-[1px] h-12 bg-primary/20 mx-auto relative hidden md:block" />
-            <WorkflowNode icon={Code} label="Post Comments" active delay={3} />
+          <div className="flex-1 flex flex-col justify-center gap-4 md:gap-2 relative z-10 w-full max-w-sm mx-auto">
+            {howItWorksSteps.map((step, idx) => (
+              <React.Fragment key={idx}>
+                <WorkflowNode 
+                  icon={step.icon} 
+                  label={step.label} 
+                  active={activeStep === idx} 
+                  onClick={() => setActiveStep(idx)}
+                />
+                {idx < howItWorksSteps.length - 1 && (
+                  <div className="w-[1px] h-8 md:h-12 bg-white/10 mx-auto relative transition-colors duration-500">
+                    {activeStep >= idx && (
+                      <motion.div
+                        layoutId={`flow-line-${idx}`}
+                        className="absolute inset-0 bg-gradient-to-b from-primary to-transparent"
+                      />
+                    )}
+                  </div>
+                )}
+              </React.Fragment>
+            ))}
           </div>
         </div>
 
-        {/* Right Terminal */}
-        <div className="relative">
-          <div className="mb-8 flex items-center justify-between">
-            <div>
-              <h2 className="text-4xl font-light mb-4">The PR Agent.</h2>
-              <p className="text-foreground/50 text-lg">Auto-review logic powered by RAG context.</p>
-            </div>
-            <div className="flex items-center gap-2 border border-primary/20 rounded-full px-4 py-1.5 bg-primary/5">
+        {/* Right Dynamic Content */}
+        <div className="relative flex flex-col gap-8">
+          <div className="min-h-[140px]">
+            <AnimatePresence mode="wait">
               <motion.div
-                animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="w-2 h-2 rounded-full bg-primary"
-              />
-              <span className="font-mono text-xs text-primary uppercase">Active</span>
-            </div>
+                key={activeStep}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
+              >
+                <h2 className="text-4xl font-light mb-4">{howItWorksSteps[activeStep]?.title}</h2>
+                <p className="text-foreground/50 text-lg max-w-md">{howItWorksSteps[activeStep]?.desc}</p>
+              </motion.div>
+            </AnimatePresence>
           </div>
 
-          <div className="rounded-xl border border-white/10 bg-[#0A0A0A] overflow-hidden shadow-2xl">
+          {/* <div className="rounded-xl border border-white/10 bg-[#0A0A0A] overflow-hidden shadow-2xl">
             <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10 bg-white/5">
               <TerminalIcon className="w-4 h-4 text-white/40" />
               <span className="font-mono text-xs text-white/40">agent output</span>
             </div>
-            <div className="p-6 font-mono text-sm leading-relaxed">
-              <TerminalLine delay={1}>[INFO] Incoming PR webhook detected.</TerminalLine>
-              <TerminalLine delay={1.5}>[TASK] Fetching /src/components/auth...</TerminalLine>
-              <TerminalLine delay={2.5}>[RAG] Embedding distance matched: Session logic.</TerminalLine>
-              <TerminalLine delay={3.5} type="success" className="text-primary italic mt-4">&gt; Finding: Missing cleanup on session close.</TerminalLine>
-              <TerminalLine delay={4.5}>[ACTION] Generating review comment...</TerminalLine>
-              <TerminalLine delay={5.5}>[INFO] Comment posted successfully.</TerminalLine>
+            <div className="p-6 font-mono text-sm leading-relaxed min-h-[200px]">
+              <AnimatePresence mode="wait">
+                <motion.div key={activeStep}>
+                  {howItWorksSteps[activeStep]?.logs?.map((log, i) => (
+                    <TerminalLine key={i} delay={log.delay} type={log.type}>
+                      {log.text}
+                    </TerminalLine>
+                  ))}
+                </motion.div>
+              </AnimatePresence>
             </div>
+          </div> */}
+
+          {/* Placeholder for Media */}
+          <div className="w-full aspect-video rounded-xl border border-dashed border-white/20 bg-white/5 flex items-center justify-center relative overflow-hidden group">
+             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,var(--primary)_0%,transparent_70%)] opacity-0 group-hover:opacity-[0.05] transition-opacity duration-700" />
+             <span className="font-mono text-xs text-white/30 uppercase tracking-widest"></span>
           </div>
+
         </div>
 
       </div>
@@ -236,20 +352,17 @@ function PRAgent() {
   );
 }
 
-function WorkflowNode({ icon: Icon, label, active = false, delay }: { icon: any, label: string, active?: boolean, delay: number }) {
+function WorkflowNode({ icon: Icon, label, active = false, onClick }: { icon: any, label: string, active?: boolean, onClick: () => void }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: delay * 0.2 }}
-      viewport={{ once: true }}
-      className={`flex items-center gap-4 p-4 rounded-lg border ${active ? 'border-primary/50 bg-primary/10 shadow-[0_0_20px_-5px_var(--primary)]' : 'border-white/10 bg-white/5'}`}
+    <motion.button
+      onClick={onClick}
+      className={`w-full flex items-center gap-4 p-4 rounded-lg border transition-all duration-300 text-left cursor-pointer ${active ? 'border-primary/50 bg-primary/10 shadow-[0_0_20px_-5px_var(--primary)] scale-105' : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'}`}
     >
       <div className={`p-2 rounded-md ${active ? 'bg-primary/20 text-primary' : 'bg-white/10 text-white/50'}`}>
         <Icon className="w-5 h-5" />
       </div>
       <span className={`font-mono text-sm ${active ? 'text-primary' : 'text-white/70'}`}>{label}</span>
-    </motion.div>
+    </motion.button>
   );
 }
 
@@ -269,132 +382,167 @@ function TerminalLine({ children, delay, type = "info", className = "" }: { chil
 
 function Features() {
   return (
-    <section className="py-40 px-6 md:px-20 bg-[#050505]">
+    <section id="features" className="py-40 px-6 md:px-20 bg-[#050505]">
       <div className="max-w-7xl mx-auto">
         <div className="mb-20 text-center">
-          <h2 className="text-4xl md:text-5xl font-light mb-6">The <span className="font-serif italic text-primary">Emerald</span> Bento</h2>
-          <p className="text-foreground/50">Core capacities that turn repos into knowledge graphs.</p>
+          <h2 className="text-4xl md:text-5xl font-light mb-6">Unified <span className="text-primary">Features</span></h2>
+          <p className="text-foreground/50">Core capacities integrating advanced features and actionable insights.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[300px]">
           {/* Card 1 */}
           <BentoCard
             className="md:col-span-2 relative group"
-            title="Context-aware Code Chat."
-            icon={<Network className="w-8 h-8 text-primary" />}
+            title="Intelligent PR Reviews."
+            description="Analyzes pull requests using context-aware retrieval to catch issues and suggest improvements."
+            icon={<GitPullRequest className="w-8 h-8 text-primary" />}
           >
-            <div className="absolute right-0 bottom-0 p-8 opacity-20 group-hover:opacity-100 transition-opacity duration-700">
-              <motion.div animate={{ rotate: 360 }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }}>
-                <Network className="w-48 h-48 text-primary blur-sm" />
-              </motion.div>
-            </div>
+            {/* <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-primary/10 to-transparent pointer-events-none" /> */}
           </BentoCard>
 
           {/* Card 2 */}
           <BentoCard
             className="md:col-span-1"
-            title="Auto-Repo Documentation."
+            title="AI-Generated Documentation."
+            description="Create README files, onboarding guides, and system design docs based on actual codebase."
             icon={<FileCode className="w-8 h-8 text-primary" />}
           />
 
           {/* Card 3 */}
           <BentoCard
-            className="md:col-span-3 h-full"
-            title="Live Architecture Diagrams."
+            className="md:col-span-1 h-full"
+            title="Context-aware Codebase Chat."
+            description="Ask questions about your repository and get context-aware answers instantly based on Indexed codebase."
+            icon={<Network className="w-8 h-8 text-primary" />}
+          />
+
+          {/* Card 4 */}
+          <BentoCard
+            className="md:col-span-2 h-full"
+            title="AI Issue Analysis."
+            description="System analyzes webhooks events to suggest relevant files and labels for your issues."
             icon={<Layers className="w-8 h-8 text-primary" />}
           >
-            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-primary/10 to-transparent pointer-events-none" />
+            {/* <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-primary/10 to-transparent pointer-events-none" /> */}
           </BentoCard>
+
         </div>
       </div>
     </section>
   );
 }
 
-function BentoCard({ title, icon, className = "", children }: { title: string, icon: React.ReactNode, className?: string, children?: React.ReactNode }) {
+function BentoCard({ title, description, icon, className = "", children }: { title: string, description?: string, icon: React.ReactNode, className?: string, children?: React.ReactNode }) {
   return (
-    <div className={`group relative overflow-hidden rounded-2xl border border-white/5 bg-white/[0.02] p-8 transition-all duration-500 hover:bg-primary/5 hover:border-primary/50 ${className}`}>
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/0 to-primary/0 group-hover:from-primary/5 group-hover:to-transparent transition-all duration-500" />
+    <GlowCard customSize glowColor="green" className={`group relative overflow-hidden transition-all duration-500 ${className}`}>
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/0 to-primary/0" />
       <div className="relative z-10 h-full flex flex-col justify-between">
-        <div className="p-3 rounded-lg bg-white/5 w-fit border border-white/10 group-hover:border-primary/30 group-hover:shadow-[0_0_20px_-5px_var(--primary)] transition-all duration-500">
+        <div className="p-3 rounded-lg bg-white/5 w-fit border border-white/10">
           {icon}
         </div>
-        <h3 className="text-2xl font-light max-w-[200px] mt-8 group-hover:text-primary transition-colors duration-500">{title}</h3>
+        <div className="mt-8">
+          <h3 className="text-2xl font-light">{title}</h3>
+          {description && <p className="text-foreground/60 text-sm mt-3 leading-relaxed max-w-sm">{description}</p>}
+        </div>
       </div>
       {children}
-    </div>
+    </GlowCard>
   );
 }
 
 function TechnicalProof() {
   return (
-    <section className="py-32 px-6 overflow-hidden border-t border-white/5">
-      <div className="max-w-7xl mx-auto text-center">
-        <h2 className="text-3xl font-light mb-20 font-serif italic text-white/80">The RAG Stack</h2>
+    <section className="py-32 px-4 bg-black/40">
+      <div className="max-w-5xl mx-auto text-center mb-20">
+        <h2 className="text-sm font-mono text-primary tracking-[0.3em] uppercase mb-4">The RAG Stack</h2>
+        <p className="text-4xl font-serif italic text-white/80">High-Precision Engineering</p>
+      </div>
 
-        <div className="relative flex flex-col md:flex-row items-center justify-center gap-4 md:gap-10 py-10 w-full max-w-4xl mx-auto">
-
-          <TechNode icon={Code2} label="Repo" />
-          <AnimatedLine />
-          <TechNode icon={FileCode} label="Embeddings" />
-          <AnimatedLine />
-          <TechNode icon={Database} label="Vector DB" />
-          <AnimatedLine />
-          <TechNode icon={Cpu} label="LLM" />
-
+      <div className="max-w-4xl mx-auto relative px-12 gap-12 flex flex-col md:flex-row items-center justify-between md:h-64 py-16 md:py-0 md:gap-0">
+        {/* Connection Lines (hidden on mobile, shown on md screens) */}
+        <div className="absolute inset-x-12 top-1/2 -translate-y-1/2 hidden md:flex items-center justify-around pointer-events-none">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="relative flex-1 h-[1px] bg-white/10">
+              <motion.div 
+                animate={{ left: ["0%", "100%"] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear", delay: i * 0.5 }}
+                className="absolute top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-primary shadow-[0_0_10px_1px_var(--primary)]"
+              />
+            </div>
+          ))}
         </div>
+
+        {[
+          { icon: Code2, label: "Repo" },
+          { icon: Layers, label: "Embeddings" },
+          { icon: Database, label: "Vector DB" },
+          { icon: Cpu, label: "LLM" }
+        ].map((item, i) => (
+          <div key={i} className="relative z-10 flex flex-col items-center gap-4">
+            <div className="w-16 h-16 rounded-none border border-white/20 bg-background flex items-center justify-center group hover:border-primary transition-colors shadow-sm">
+              <item.icon className="w-6 h-6 text-white/50 group-hover:text-primary transition-colors stroke-[1.5]" />
+            </div>
+            <span className="font-mono text-[10px] uppercase tracking-widest text-white/50">{item.label}</span>
+          </div>
+        ))}
       </div>
     </section>
-  );
-}
-
-function TechNode({ icon: Icon, label }: { icon: any, label: string }) {
-  return (
-    <div className="flex flex-col items-center gap-4 relative z-10 w-full md:w-auto">
-      <div className="w-20 h-20 flex items-center justify-center bg-background border border-white/20 text-white/50 rounded-none shadow-sm hover:border-primary hover:text-primary transition-colors duration-300">
-        <Icon className="w-8 h-8 font-light stroke-[1]" />
-      </div>
-      <span className="font-mono text-xs uppercase tracking-widest text-white/50">{label}</span>
-    </div>
-  );
-}
-
-function AnimatedLine() {
-  return (
-    <div className="relative flex-1 h-px w-full md:w-20 md:h-[0px] bg-white/10 my-4 md:my-0 flex items-center justify-center md:flex-col md:rotate-0 rotate-90">
-      <motion.div
-        animate={{ x: ["-100%", "300%"] }}
-        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-        className="absolute top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-primary shadow-[0_0_10px_2px_var(--primary)] z-20 hidden md:block"
-      />
-    </div>
   );
 }
 
 function TicketPricing() {
   return (
-    <section className="py-40 px-6 max-w-7xl mx-auto">
+    <section id="pricing" className="py-40 px-6 max-w-7xl mx-auto">
       <div className="mb-20 text-center">
-        <h2 className="font-mono text-sm tracking-widest text-primary mb-4 uppercase">Access</h2>
-        <h2 className="text-4xl md:text-5xl font-light">The <span className="font-serif italic text-white/60">Ticket</span></h2>
+        <h2 className="font-mono text-sm tracking-widest text-primary mb-4 uppercase">Subscriptions</h2>
+        <h2 className="text-4xl md:text-5xl font-light">Flexible <span className="font-serif italic text-white/60">Plans</span></h2>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-        <PricingCard title="Starter" price="Free" features={["Basic RAG Search", "Public Repos", "Community Support"]} />
-        <PricingCard title="Pro" price="$29/mo" features={["Private Repos", "Live Architecture", "PR Agents & Workflows", "Priority Support"]} highlight />
-        <PricingCard title="Enterprise" price="Custom" features={["Unlimited Seats", "Custom Integrations", "Dedicated Account Manager"]} />
+        <PricingCard 
+          title="Free" 
+          price="$0" 
+          features={[
+            "Up to 5 repositories", 
+            "Up to 5 reviews per repository", 
+            "Pull Request reviews", 
+            "Up to 10 AI chat messages / 8 hours",
+            "No regeneration in Docs"
+          ]} 
+        />
+        <PricingCard 
+          title="Pro" 
+          price="$10/mo" 
+          features={[
+            "Unlimited repositories", 
+            "Unlimited reviews", 
+            "Pull Request reviews", 
+            "Unlimited AI chat messages",
+            "Regenerate Docs"
+          ]} 
+          highlight 
+          buttonText="Coming Soon"
+        />
+        <PricingCard 
+          title="Enterprise" 
+          price="Custom" 
+          features={[
+            "Unlimited Seats", 
+            "Custom Integrations", 
+            "Advanced Analytics", 
+            "Dedicated Support"
+          ]} 
+        />
       </div>
     </section>
   );
 }
 
-function PricingCard({ title, price, features, highlight = false }: { title: string, price: string, features: string[], highlight?: boolean }) {
+function PricingCard({ title, price, features, highlight = false, buttonText = "Deploy Now" }: { title: string, price: string, features: string[], highlight?: boolean, buttonText?: string }) {
   // Torn edge effect using mask image concept applied via css or svg pattern
   return (
     <div className={`relative flex flex-col ${highlight ? 'scale-105 z-10' : 'scale-100 opacity-90'} transition-transform`}>
       <div className={`bg-white/5 border-l border-r ${highlight ? 'border-primary' : 'border-white/10'} p-8 min-h-[400px] flex flex-col mask-ticket`}>
-        {/* Top tear effect */}
-        <div className="absolute top-0 left-0 w-full h-[15px] bg-background" style={{ maskImage: "radial-gradient(circle at 10px 0, transparent 10px, black 11px)", maskSize: "20px 20px", maskRepeat: "repeat-x" }} />
 
         <div className="pt-8">
           <h3 className="font-mono text-sm tracking-widest text-primary uppercase mb-2">{title}</h3>
@@ -413,13 +561,11 @@ function PricingCard({ title, price, features, highlight = false }: { title: str
         </div>
 
         {highlight && (
-          <button className="mt-auto w-full py-4 bg-primary text-background font-mono text-sm uppercase tracking-widest font-bold hover:bg-primary/90 transition-colors">
-            Deploy Now
+          <button className="mt-6 w-full py-2 bg-primary text-background font-mono text-sm uppercase tracking-widest font-bold hover:bg-primary/90 transition-colors">
+            {buttonText}
           </button>
         )}
 
-        {/* Bottom tear effect */}
-        <div className="absolute bottom-0 left-0 w-full h-[15px] bg-background" style={{ maskImage: "radial-gradient(circle at 10px 15px, transparent 10px, black 11px)", maskSize: "20px 20px", maskRepeat: "repeat-x" }} />
       </div>
     </div>
   );
@@ -429,9 +575,12 @@ function FAQ() {
   const [openIdx, setOpenIdx] = useState<number | null>(null);
 
   const faqs = [
-    { q: "How does CodeUnicorn differ from Copilot?", a: "CodeUnicorn focuses on repo-wide reasoning and async workflows (like PR review agents), acting as a team member rather than just an inline autocomplete." },
-    { q: "What vector database powers the RAG?", a: "We utilize optimized edge-based embeddings with a customized vector store to guarantee rapid recall and maximum context preservation without latency." },
-    { q: "Are my private repositories secure?", a: "Extremely. We follow SOC2 principles immediately discarding code snippets after embedding, ensuring your raw code never trains external models." }
+    { q: "How does the automated PR review agent work?", a: "Instead of generic checks, our AI analyzes pull requests using deep repository context. It catches potential issues, suggests actionable improvements, and meaningfully enhances code quality directly on GitHub." },
+    { q: "What insights can I see on the Developer Analytics Dashboard?", a: "The dashboard tracks your complete engineering growth. You can easily monitor your commits, pull requests, and AI-generated reviews through customizable contribution graphs, streaks, and monthly performance trends." },
+    { q: "Can I ask arbitrary questions about my own codebase?", a: "Yes! Once you connect your repository, CodeUnicorn indexes your code. Using our Codebase Chat, you can ask deep, technical questions and get context-aware answers instantly from your exact architecture." },
+    { q: "How does the AI-powered Issue Analysis work?", a: "Through continuous webhook tracking, our system automatically evaluates new issues the moment they are opened, and immediately suggests the most relevant files to fix along with appropriate tags and labels." },
+    { q: "Does CodeUnicorn help with writing project documentation?", a: "Absolutely. CodeUnicorn can generate comprehensive README files, team onboarding guides, and system design documents built entirely from the actual, true state of your codebase." },
+    { q: "Is the platform privacy-safe and customizable?", a: "CodeUnicorn is inherently privacy-safe. You also have full control over the AI reviewer by defining custom analysis rules, setting specific focus areas, and configuring paths for the AI to completely ignore." }
   ];
 
   return (
@@ -479,8 +628,8 @@ function Footer() {
         <div className="w-[800px] h-[800px] bg-primary rounded-full blur-[150px] opacity-[0.1]" />
       </motion.div>
 
-      <div className="relative z-10 text-center">
-        <h2 className="text-4xl md:text-8xl font-mono tracking-[0.8em] md:tracking-[1em] text-white/50 mb-12 uppercase ml-8 md:ml-24">
+      <div className="relative z-10 text-center w-full">
+        <h2 className="text-2xl md:text-8xl font-mono tracking-[0.7em] text-white/50 mb-12 uppercase ml-8 md:ml-24">
           CodeUnicorn
         </h2>
 
@@ -489,6 +638,11 @@ function Footer() {
           <a href="#" className="hover:text-primary transition-colors">GitHub</a>
           <a href="#" className="hover:text-primary transition-colors">Docs</a>
         </div>
+      </div>
+      
+      <div className="absolute bottom-6 w-full px-6 flex justify-between items-center text-xs font-mono text-white/30 z-20">
+        <div>© 2026 CodeUnicorn </div>
+        <div>Built for Engineers</div>
       </div>
     </footer>
   );
