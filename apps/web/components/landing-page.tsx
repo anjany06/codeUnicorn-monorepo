@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { ChevronDown, Database, FileCode, Network, Terminal as TerminalIcon, GitPullRequest, Code2, Layers, Cpu, Code, ArrowRight, Activity, Github, User2, GitCommit, MousePointer2 } from "lucide-react";
 import { EtherealShadow } from "./ui/etheral-shadow";
@@ -33,6 +33,17 @@ export function LandingPage() {
   );
 }
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+  return isMobile;
+}
+
 function Navbar() {
   return (
     <nav className="fixed top-0 left-0 w-full p-4 md:p-6 z-50 flex items-center justify-between bg-transparent backdrop-blur-lg md:backdrop-blur-none border-b border-white/5 md:border-transparent text-foreground">
@@ -51,19 +62,31 @@ function Navbar() {
 }
 
 function Hero() {
+  const isMobile = useIsMobile();
   const { scrollY } = useScroll();
-  const scaleDown = useTransform(scrollY, [0, 500], [1, 0.95]);
-  const yParallax = useTransform(scrollY, [0, 500], [0, 100]);
+
+  // On mobile, disable scroll-linked transforms for performance
+  const scaleDown = useTransform(scrollY, [0, 500], isMobile ? [1, 1] : [1, 0.95]);
+  const yParallax = useTransform(scrollY, [0, 500], isMobile ? [0, 0] : [0, 100]);
   const clipPathReveal = useTransform(scrollY, [0, 300], ["inset(10% 10% 10% 10%)", "inset(0% 0% 0% 0%)"]);
 
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center pt-32 pb-20 px-4">
-      <EtherealShadow
-        color="rgba(16, 185, 129, 0.6)"
-        animation={{ scale: 100, speed: 90 }}
-        noise={{ opacity: 1, scale: 1.2 }}
-        className="z-0"
-      />
+      {/* EtherealShadow is disabled on mobile for performance (SVG filters are costly) */}
+      {!isMobile && (
+        <EtherealShadow
+          color="rgba(16, 185, 129, 0.6)"
+          animation={{ scale: 100, speed: 90 }}
+          noise={{ opacity: 1, scale: 1.2 }}
+          className="z-0"
+        />
+      )}
+      {/* Mobile: static simple gradient glow instead */}
+      {isMobile && (
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-emerald-500/20 rounded-full blur-[100px]" />
+        </div>
+      )}
       <motion.div style={{ scale: scaleDown, y: yParallax }} className="text-center z-10 max-w-4xl mx-auto flex flex-col items-center relative">
         <div className="inline-flex items-center gap-2 md:gap-3 px-3 py-1.5 md:px-5 md:py-2 rounded-full border border-white/20 bg-white/10 mb-8 text-[10px] md:text-xs font-mono text-white backdrop-blur-md shadow-[0_4px_14px_0_rgba(255,255,255,0.1)] hover:bg-white/20 hover:border-white/30 transition-all duration-300">
           <div className="flex items-center gap-3">
@@ -142,6 +165,7 @@ function Manifesto() {
 }
 
 function Pulse() {
+  const isMobile = useIsMobile();
   const ref = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -151,19 +175,17 @@ function Pulse() {
   const xTransform = useTransform(scrollYProgress, [0, 1], ["0%", "-30%"]);
   const xTransformReverse = useTransform(scrollYProgress, [0, 1], ["-30%", "0%"]);
 
+  // Fewer blocks on mobile to avoid rendering 600 motion elements
+  const blockCount = isMobile ? 50 : 150;
+
   const renderPulseRow = (transform: any, yOffset: number) => (
     <motion.div style={{ x: transform }} className="flex gap-2 whitespace-nowrap min-w-max pb-2">
-      {Array.from({ length: 150 }).map((_, i) => {
-        // Deterministic pseudo-random generation to fix hydration mismatch
+      {Array.from({ length: blockCount }).map((_, i) => {
         const x = Math.sin(i * 12.9898 + (yOffset * 78.233)) * 43758.5453;
         const intensity = x - Math.floor(x);
         const isActive = intensity > 0.6;
         return (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.5, delay: ((i + yOffset) % 20) * 0.02 }}
+          <div
             key={i}
             className={`w-6 h-6 rounded-[2px] ${isActive ? 'bg-primary' : 'bg-primary/5 border border-primary/10'}`}
             style={{
