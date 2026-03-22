@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React from "react";
 import {
@@ -509,15 +509,15 @@ export function DeveloperMetrics({ data, isLoading }: Props) {
             <Separator />
 
             {/* Tabs */}
-            <Tabs defaultValue="issues">
+            <Tabs defaultValue="weekday">
               <TabsList className="h-8 bg-muted/50">
-                <TabsTrigger value="issues" className="text-xs h-6">
-                  <BarChart2 className="h-3 w-3 mr-1" />
-                  Issue Categories
-                </TabsTrigger>
                 <TabsTrigger value="weekday" className="text-xs h-6">
                   <Star className="h-3 w-3 mr-1" />
                   Weekday Activity
+                </TabsTrigger>
+                <TabsTrigger value="issues" className="text-xs h-6">
+                  <BarChart2 className="h-3 w-3 mr-1" />
+                  Issue Categories
                 </TabsTrigger>
               </TabsList>
 

@@ -44,7 +44,7 @@ function Navbar() {
         <a href="#features" className="text-sm font-mono hover:text-emerald-500 transition-colors hidden md:block">Features</a>
         <a href="#pricing" className="text-sm font-mono hover:text-emerald-500 transition-colors hidden md:block">Pricing</a>
         <a href="/login" className="text-xs md:text-sm font-mono hover:text-emerald-500 transition-colors ml-2 md:ml-4">Log In</a>
-        <a href="/login" className="text-xs md:text-sm font-mono border border-primary px-3 py-1.5 md:px-4 md:py-2 bg-emerald-500 hover:bg-transparent transition-all rounded-sm uppercase tracking-wider">Get Started</a>
+        <a href="/login" className="text-xs md:text-sm font-mono border border-primary px-3 py-1.5 md:px-4 md:py-2 bg-emerald-600 hover:bg-transparent transition-all rounded-sm uppercase tracking-wider">Get Started</a>
       </div>
     </nav>
   );
@@ -78,14 +78,14 @@ function Hero() {
           GitHub Intelligence <br />
           <span className="font-serif italic text-emerald-600">Platform.</span>
         </h1>
-        <p className="text-xl md:text-2xl text-foreground/70 max-w-3xl font-light mb-12">
+        <p className="text-xl md:text-2xl text-foreground/70 max-w-3xl font-light mb-20">
           Enhance GitHub workflows by combining intelligent PR reviews, codebase understanding, and developer analytics into one unified tool.
         </p>
       </motion.div>
 
       <motion.div
         style={{ clipPath: clipPathReveal, y: useTransform(scrollY, [0, 500], [50, -50]) }}
-        className="w-full max-w-6xl mt-12 relative z-20"
+        className="w-full max-w-6xl mt-24 relative z-20"
       >
         <div className="relative aspect-video rounded-xl bg-card border border-primary overflow-hidden shadow-[0_0_50px_-12px_var(--primary)] shadow-primary/20">
           {/* Device Frame Header */}
@@ -356,7 +356,7 @@ function WorkflowNode({ icon: Icon, label, active = false, onClick }: { icon: an
   return (
     <motion.button
       onClick={onClick}
-      className={`w-full flex items-center gap-4 p-4 rounded-lg border transition-all duration-300 text-left cursor-pointer ${active ? 'border-primary/50 bg-primary/10 shadow-[0_0_20px_-5px_var(--primary)] scale-105' : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'}`}
+      className={`w-full flex items-center gap-4 p-4 rounded-lg border transition-all duration-300 text-left cursor-pointer ${active ? 'border-primary/50 bg-primary/10 scale-105' : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'}`}
     >
       <div className={`p-2 rounded-md ${active ? 'bg-primary/20 text-primary' : 'bg-white/10 text-white/50'}`}>
         <Icon className="w-5 h-5" />
@@ -629,7 +629,7 @@ function Footer() {
       </motion.div>
 
       <div className="relative z-10 text-center w-full">
-        <h2 className="text-2xl md:text-8xl font-mono tracking-[0.7em] text-white/50 mb-12 uppercase ml-8 md:ml-24">
+        <h2 className="text-xl md:text-7xl font-mono tracking-[0.7em] text-white/50 mb-12 uppercase ml-8 md:ml-24">
           CodeUnicorn
         </h2>
 
