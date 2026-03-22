@@ -72,21 +72,12 @@ function Hero() {
 
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center pt-32 pb-20 px-4">
-      {/* EtherealShadow is disabled on mobile for performance (SVG filters are costly) */}
-      {!isMobile && (
-        <EtherealShadow
-          color="rgba(16, 185, 129, 0.6)"
-          animation={{ scale: 100, speed: 90 }}
-          noise={{ opacity: 1, scale: 1.2 }}
-          className="z-0"
-        />
-      )}
-      {/* Mobile: static simple gradient glow instead */}
-      {isMobile && (
-        <div className="absolute inset-0 z-0 pointer-events-none">
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-emerald-500/20 rounded-full blur-[100px]" />
-        </div>
-      )}
+      <EtherealShadow
+        color="rgba(16, 185, 129, 0.6)"
+        animation={{ scale: 100, speed: 90 }}
+        noise={{ opacity: 1, scale: 1.2 }}
+        className="z-0"
+      />
       <motion.div style={{ scale: scaleDown, y: yParallax }} className="text-center z-10 max-w-4xl mx-auto flex flex-col items-center relative">
         <div className="inline-flex items-center gap-2 md:gap-3 px-3 py-1.5 md:px-5 md:py-2 rounded-full border border-white/20 bg-white/10 mb-8 text-[10px] md:text-xs font-mono text-white backdrop-blur-md shadow-[0_4px_14px_0_rgba(255,255,255,0.1)] hover:bg-white/20 hover:border-white/30 transition-all duration-300">
           <div className="flex items-center gap-3">
@@ -765,10 +756,10 @@ const DashboardVisual = () => {
                 }}
                 viewport={{ once: true }}
                 className={`flex-1 rounded-t-[2px] transition-colors ${i === 11
-                    ? "bg-primary opacity-90"
-                    : i === 7
-                      ? "bg-amber-500/70"
-                      : "bg-white/10 hover:bg-white/25"
+                  ? "bg-primary opacity-90"
+                  : i === 7
+                    ? "bg-amber-500/70"
+                    : "bg-white/10 hover:bg-white/25"
                   }`}
               />
             ))}
