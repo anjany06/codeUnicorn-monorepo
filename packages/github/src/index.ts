@@ -253,6 +253,73 @@ export async function postReviewComment(
   });
 }
 
+/**
+ * Post an initial bot status comment (like CodeRabbit / Vercel) and return
+ * the comment ID so it can be updated later.
+ */
+export async function postBotStatusComment(
+  token: string,
+  owner: string,
+  repo: string,
+  prNumber: number
+): Promise<number> {
+  const octokit = createOctokit(token);
+
+  const now = new Date().toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZoneName: "short",
+  });
+
+  const body = [
+    `## 🦄 CodeUnicorn PR Review`,
+    ``,
+    `> ⏳ **Review in progress…**`,
+    `>`,
+    `> CodeUnicorn is analyzing the changes in this pull request.`,
+    `> This comment will be updated automatically once the review is complete.`,
+    ``,
+    `| | |`,
+    `|---|---|`,
+    `| **Status** | 🔄 In Progress |`,
+    `| **Started** | ${now} |`,
+    ``,
+    `---`,
+    `*Powered by [CodeUnicorn](https://codeunicorn.vercel.app) · AI-powered code reviews*`,
+  ].join("\n");
+
+  const { data } = await octokit.rest.issues.createComment({
+    owner,
+    repo,
+    issue_number: prNumber,
+    body,
+  });
+
+  return data.id;
+}
+
+/**
+ * Update an existing comment by its ID.
+ */
+export async function updateComment(
+  token: string,
+  owner: string,
+  repo: string,
+  commentId: number,
+  body: string
+) {
+  const octokit = createOctokit(token);
+  await octokit.rest.issues.updateComment({
+    owner,
+    repo,
+    comment_id: commentId,
+    body,
+  });
+}
+
 // ─── Feature 1: Line-Level PR Comments ──────────────────────────────────────
 
 /**

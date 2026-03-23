@@ -3,6 +3,8 @@ import {
   getPullRequestDiff,
   postReviewComment,
   postLineReviewComments,
+  postBotStatusComment,
+  updateComment,
 } from "@codeunicorn/github";
 import { retrieveContext } from "@codeunicorn/ai";
 import { generateText, generateObject } from "ai";
@@ -193,6 +195,19 @@ export const generateReview = inngest.createFunction(
       return { success: true, skipped: true, reason: "Reviews disabled for this repository" };
     }
 
+    // Step 1.5: Post initial "review in progress" bot comment on the PR
+    const statusCommentId = await step.run("post-status-comment", async () => {
+      const account = await prisma.account.findFirst({
+        where: { userId, providerId: "github" },
+      });
+
+      if (!account?.accessToken) {
+        throw new Error("No Github access token found");
+      }
+
+      return await postBotStatusComment(account.accessToken, owner, repo, prNumber);
+    });
+
     // Step 2: Fetch PR data (diff with richer file info)
     const prData = await step.run("fetch-pr-data", async () => {
       const account = await prisma.account.findFirst({
@@ -342,13 +357,16 @@ ${customRulesText}`;
       );
     });
 
-    // Step 7: Post summary comment
+    // Step 7: Update the status comment with the full review
     await step.run("post-summary-comment", async () => {
       const summaryMarkdown = formatSummaryMarkdown({
         ...structuredReview,
         lineComments: filteredComments,
       });
-      await postReviewComment((prData as any).token as string, owner, repo, prNumber, summaryMarkdown);
+
+      const finalBody = `## 🦄 CodeUnicorn AI Review\n\n${summaryMarkdown}\n\n---\n*Powered by [CodeUnicorn](https://codeunicorn.vercel.app) \u00b7 AI-powered code reviews*`;
+
+      await updateComment((prData as any).token as string, owner, repo, statusCommentId, finalBody);
     });
 
     // Step 8: Save review to database
