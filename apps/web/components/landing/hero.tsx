@@ -65,7 +65,7 @@ export function Hero() {
 }
 
 /* ── Animated Dashboard Visual for Hero ── */
-const DashboardVisual = () => {
+export const DashboardVisual = () => {
   return (
     <div className="absolute inset-x-0 bottom-0 top-0 bg-background flex p-3 md:p-5 gap-4 overflow-hidden">
       {/* Subtle dot grid background */}
@@ -138,8 +138,8 @@ const DashboardVisual = () => {
         >
           <div className="flex justify-between items-start mb-4">
             <div>
-              <p className="text-[9px] text-white/30 font-bold uppercase tracking-wider mb-1 font-mono">Monthly Commits</p>
-              <h4 className="text-lg md:text-xl font-light text-white/90">8,420</h4>
+              <p className="text-[9px] text-white/30 font-bold uppercase tracking-wider mb-1 font-mono">Total Commits</p>
+              <h4 className="text-lg md:text-xl font-light text-white/90">2,420</h4>
             </div>
             <motion.div
               animate={{ scale: [1, 1.05, 1] }}

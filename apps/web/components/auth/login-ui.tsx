@@ -2,9 +2,12 @@
 
 import React, { useState } from "react";
 import { signIn } from "@/lib/auth-client";
-import { Github, ShieldCheck, Sparkles } from "lucide-react";
+import { Github, Sparkles, ArrowLeft } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { ConnectButton } from "@/app/dashboard/repository/_components/connect-button";
+import { motion } from "framer-motion";
+import { EtherealShadow } from "@/components/ui/etheral-shadow";
 
 export default function LoginUI() {
   const [loading, setLoading] = useState(false);
@@ -25,14 +28,57 @@ export default function LoginUI() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background text-foreground selection:bg-emerald-600/30 selection:text-emerald-800">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.6 }}
+      className="relative min-h-screen overflow-hidden bg-background text-foreground selection:bg-emerald-600/30 selection:text-emerald-800 flex"
+    >
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#10b98110_1px,transparent_1px),linear-gradient(to_bottom,#10b9810d_1px,transparent_1px)] bg-[size:4.5rem_4.5rem]" />
-        {/* <div className="absolute -top-24 left-1/2 h-[28rem] w-[28rem] -translate-x-1/2 rounded-full bg-emerald-700/12 blur-[130px]" />
-        <div className="absolute bottom-0 left-1/2 h-[18rem] w-[18rem] -translate-x-1/2 rounded-full bg-teal-500/10 blur-[120px]" /> */}
       </div>
 
-      <div className="relative flex min-h-screen items-center justify-center p-6 sm:p-10">
+      {/* Back Button */}
+      <Link
+        href="/"
+        className="absolute top-6 left-6 z-50 flex items-center gap-2 px-4 py-2 text-sm font-mono text-white/60 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 transition-all backdrop-blur-md"
+      >
+        <ArrowLeft className="w-4 h-4" />
+
+      </Link>
+
+      {/* Left side (hidden on small screens) */}
+      <div className="relative hidden w-[45%] flex-col items-center justify-center lg:flex bg-background z-10">
+        {/* Static EtherealShadow background (speed: 0 disables the swirling animation) */}
+        <EtherealShadow
+          color="rgba(16, 185, 129, 0.2)"
+          animation={{ scale: 100, speed: 0 }}
+          noise={{ opacity: 1, scale: 1.2 }}
+          className="z-0"
+        />
+
+        {/* Hero content - Just text, no dashboard */}
+        <div className="text-center z-10 max-w-xl mx-auto flex flex-col items-center relative scale-90 origin-center">
+          <div className="inline-flex items-center gap-2 md:gap-3 px-3 py-1.5 md:px-5 md:py-2 rounded-full border border-white/20 bg-white/10 mb-8 text-[10px] md:text-xs font-mono text-white backdrop-blur-md shadow-[0_4px_14px_0_rgba(255,255,255,0.1)]">
+            <div className="flex items-center gap-3">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400"></span>
+              </span>
+              <span className="font-light text-white drop-shadow-md uppercase">Meet CodeUnicorn</span>
+            </div>
+          </div>
+          <h1 className="text-5xl md:text-6xl lg:text-[82px] font-normal leading-tight tracking-tight mb-8">
+            GitHub Intelligence <br />
+            <span className="font-serif italic text-emerald-600">Platform.</span>
+          </h1>
+          <p className="text-lg text-foreground/70 font-light max-w-md">
+            Enhance GitHub workflows by combining intelligent PR reviews, codebase understanding, and developer analytics into one unified tool.
+          </p>
+        </div>
+      </div>
+
+      {/* Right side - existing login form */}
+      <div className="relative flex w-full flex-col items-center justify-center lg:w-[55%] p-6 sm:p-10 z-10 border-l border-white/10">
         <div className="w-full max-w-lg">
           <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] p-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_34px_90px_-58px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:p-10">
             <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(140deg,rgba(255,255,255,0.14),transparent_42%,rgba(16,185,129,0.08)_100%)]" />
@@ -56,13 +102,6 @@ export default function LoginUI() {
               </p>
             </div>
 
-            {/* <div className="relative mt-6 flex justify-center">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/25 bg-emerald-400/10 px-3 py-1 text-sm font-semibold text-emerald-100">
-                <ShieldCheck className="h-3.5 w-3.5" />
-                GITHUB OAUTH
-              </span>
-            </div> */}
-
             <div className="relative mt-8">
               <ConnectButton
                 onClick={handleGitHubLogin}
@@ -76,14 +115,14 @@ export default function LoginUI() {
             </div>
 
             <p className="relative mt-3 text-center text-xs text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5">
-                <Sparkles className="h-3 w-3" />
+              <span className="inline-flex items-start gap-1.5">
+                <Sparkles className="h-3 w-3 shrink-0 mt-[2px]" />
                 Secure sign-in for repositories, reviews, AI chat, and repo docs.
               </span>
             </p>
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
