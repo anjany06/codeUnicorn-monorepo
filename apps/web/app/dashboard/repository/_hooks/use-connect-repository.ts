@@ -15,7 +15,10 @@ export const useConnectRepository = () => {
 
   return useMutation<void, Error, ConnectRepoInput>({
     mutationFn: async ({ owner, repo, githubId }) => {
-      await connectRepository(owner, repo, githubId);
+      const result = await connectRepository(owner, repo, githubId);
+      if (!result.success) {
+        throw new Error(result.error || "Failed to connect repository.");
+      }
     },
     onSuccess: () => {
       toast.success("Repository connected. Indexing has started in the background.");
