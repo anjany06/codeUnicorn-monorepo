@@ -80,7 +80,7 @@ export function PRAgent() {
         {/* Left Diagram */}
         <div className="relative rounded-xl border border-white/10 p-8 flex flex-col justify-between bg-white/[0.01]">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,var(--primary)_0%,transparent_40%)] opacity-[0.05]" />
-          <h3 className="font-mono text-xs uppercase tracking-widest text-primary mb-12">Workflow Integration</h3>
+          <h3 className="font-mono text-xs uppercase tracking-widest text-primary mb-12">PR Review Workflow</h3>
 
           <div className="flex-1 flex flex-col justify-center gap-4 md:gap-2 relative z-10 w-full max-w-sm mx-auto">
             {howItWorksSteps.map((step, idx) => (
