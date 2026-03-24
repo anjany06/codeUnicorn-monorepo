@@ -2,6 +2,7 @@
 
 import React, { useRef, useId, useEffect, CSSProperties } from 'react';
 import { animate, useMotionValue, AnimationPlaybackControls } from 'framer-motion';
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Type definitions
 interface ResponsiveImage {
@@ -63,8 +64,9 @@ export function EtherealShadow({
     className,
     children
 }: ShadowOverlayProps) {
+    const isMobile = useIsMobile();
     const id = useInstanceId();
-    const animationEnabled = !!animation && animation.scale > 0;
+    const animationEnabled = !!animation && animation.scale > 0 && !isMobile;
     const feColorMatrixRef = useRef<SVGFEColorMatrixElement>(null);
     const hueRotateMotionValue = useMotionValue(180);
     const hueRotateAnimation = useRef<AnimationPlaybackControls | null>(null);
