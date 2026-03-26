@@ -1,0 +1,45 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+namespace: codeunicorn
+
+# Dev: fewer replicas, lower resources
+patches:
+  - target:
+      kind: Deployment
+      name: codeunicorn-api
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 1
+  - target:
+      kind: Deployment
+      name: codeunicorn-web
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 1
+  # Disable HPA in dev
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: api-hpa
+    patch: |
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+      - op: replace
+        path: /spec/maxReplicas
+        value: 2
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: web-hpa
+    patch: |
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+      - op: replace
+        path: /spec/maxReplicas
+        value: 2

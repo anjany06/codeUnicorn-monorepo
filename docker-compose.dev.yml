@@ -1,0 +1,45 @@
+services:
+  # API (Dev mode with hot reload)
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: installer  # Stop at installer stage, use installed node_modules
+    container_name: codeunicorn-api-dev
+    command: ["pnpm", "--filter", "@codeunicorn/api", "dev"]
+    volumes:
+      - ./apps/api/src:/app/apps/api/src:ro
+      - ./packages/ai/src:/app/packages/ai/src:ro
+      - ./packages/database/src:/app/packages/database/src:ro
+      - ./packages/github/src:/app/packages/github/src:ro
+      - ./packages/inngest/src:/app/packages/inngest/src:ro
+      - ./packages/types/src:/app/packages/types/src:ro
+    environment:
+      NODE_ENV: development
+    ports:
+      - "4000:4000"
+      - "9229:9229"   # Node.js debug port
+
+
+  # Web (Dev mode with hot reload)
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: installer  # Stop at installer stage, use installed node_modules
+    container_name: codeunicorn-web-dev
+    command: ["pnpm", "--filter", "web", "dev"]
+    volumes:
+      - ./apps/web/app:/app/apps/web/app:ro
+      - ./apps/web/components:/app/apps/web/components:ro
+      - ./apps/web/lib:/app/apps/web/lib:ro
+      - ./apps/web/public:/app/apps/web/public:ro
+      - ./packages/types/src:/app/packages/types/src:ro
+      - ./packages/ui/src:/app/packages/ui/src:ro
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+    ports:
+      - "3000:3000"
+
+ 

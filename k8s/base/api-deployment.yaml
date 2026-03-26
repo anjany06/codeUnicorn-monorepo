@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: codeunicorn-api
+  namespace: codeunicorn
+  labels:
+    app: codeunicorn
+    component: api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: codeunicorn
+      component: api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: codeunicorn
+        component: api
+    spec:
+      containers:
+        - name: api
+          image: codeunicorn/api:latest
+          ports:
+            - containerPort: 4000
+              protocol: TCP
+          envFrom:
+            - secretRef:
+                name: codeunicorn-api-secrets
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: PORT
+              value: "4000"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 4000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 4000
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

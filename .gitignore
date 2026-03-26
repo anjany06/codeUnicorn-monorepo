@@ -36,3 +36,9 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
+
+# Docker
+docker-compose.override.yml
+
+# pnpm store
+.pnpm-store

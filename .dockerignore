@@ -1,0 +1,42 @@
+# Dependencies
+**/node_modules
+/.pnp*
+.pnpm-store
+
+# Build outputs
+**/.next
+**/out
+**/dist
+**/build
+**/.turbo
+
+# IDE & OS
+.vscode
+.idea
+.DS_Store
+*.swp
+*.swo
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Turbo cache
+.turbo
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Misc
+*.md
+LICENSE
+coverage
+.vercel
