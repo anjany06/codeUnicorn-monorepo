@@ -57,6 +57,83 @@ function CategoryBadge({ category }: { category: string }) {
   );
 }
 
+// Render walkthrough with styled file path headers
+function renderWalkthrough(text: string) {
+  const lines = text.split("\n");
+  return lines.map((line, i) => {
+    // Match markdown headings like ### `file.ts` or ### file.ts
+    const headingMatch = line.match(/^(#{1,4})\s+`?([^`]+)`?\s*$/);
+    if (headingMatch && headingMatch[2]) {
+      const filePath = headingMatch[2].trim();
+      return (
+        <div
+          key={i}
+          className="flex items-center gap-2 mt-4 mb-2 px-3 py-2 rounded-lg bg-muted/40 border border-border/40"
+        >
+          <FileCode2 className="h-4 w-4 text-emerald-400 shrink-0" />
+          <span className="text-sm font-semibold font-mono text-foreground">{filePath}</span>
+        </div>
+      );
+    }
+
+    // Render inline backtick code with styling
+    const parts = line.split(/(`[^`]+`)/);
+    const rendered = parts.map((part, j) => {
+      if (part.startsWith("`") && part.endsWith("`")) {
+        return (
+          <code
+            key={j}
+            className="px-1.5 py-0.5 rounded bg-muted/50 border border-border/30 text-xs font-mono text-emerald-400"
+          >
+            {part.slice(1, -1)}
+          </code>
+        );
+      }
+      return <span key={j}>{part}</span>;
+    });
+
+    if (!line.trim()) return <div key={i} className="h-2" />;
+    return (
+      <p key={i} className="text-sm text-muted-foreground leading-relaxed">
+        {rendered}
+      </p>
+    );
+  });
+}
+
+// Ensure sequence diagram has proper newlines
+function formatSequenceDiagram(raw: string): string {
+  // If it already has newlines, return as-is
+  if (raw.includes("\n")) return raw;
+
+  // Insert newline before mermaid keywords that got concatenated
+  return raw
+    .replace(/sequenceDiagram/g, "sequenceDiagram\n")
+    .replace(/participant /g, "\nparticipant ")
+    .replace(/(\w)->>([\w ])/g, "$1->>$2")
+    .replace(/(\w)-->>([\w ])/g, "$1-->>$2")
+    .replace(/(->>|-->>)/g, (match, _p1, offset, str) => {
+      // Find the start of this line going back to get the actor name
+      const before = str.substring(0, offset);
+      const lastNewline = before.lastIndexOf("\n");
+      const lineStart = before.substring(lastNewline + 1).trim();
+      // Only add newline if the line doesn't already start clean
+      if (lineStart.length > 0 && !before.endsWith("\n")) {
+        return match;
+      }
+      return match;
+    })
+    .replace(/Note (right|left|over) of /g, "\nNote $1 of ")
+    .replace(/loop /g, "\nloop ")
+    .replace(/alt /g, "\nalt ")
+    .replace(/else /g, "\nelse ")
+    .replace(/end(?=[A-Z])/g, "\nend\n")
+    .replace(/end$/g, "\nend")
+    .split(/(?=[A-Z][a-z]+(?:->>|-->>))/).join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 // Collapsible section
 function Section({
   title,
@@ -246,8 +323,8 @@ export default function ReviewDetailPage({
       {/* Walkthrough */}
       {walkthrough && (
         <Section title="Walkthrough" icon={<FileCode2 className="h-4 w-4" />} defaultOpen={false}>
-          <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-            {walkthrough}
+          <div className="space-y-0.5">
+            {renderWalkthrough(walkthrough)}
           </div>
         </Section>
       )}
@@ -351,8 +428,8 @@ export default function ReviewDetailPage({
       {/* Sequence Diagram */}
       {sequenceDiagram && (
         <Section title="Sequence Diagram" icon={<FileCode2 className="h-4 w-4" />} defaultOpen={false}>
-          <pre className="text-xs bg-muted/30 border border-border/40 rounded-lg p-4 overflow-x-auto">
-            <code>{sequenceDiagram}</code>
+          <pre className="text-xs bg-muted/30 border border-border/40 rounded-lg p-4 overflow-x-auto whitespace-pre-wrap">
+            <code>{formatSequenceDiagram(sequenceDiagram)}</code>
           </pre>
         </Section>
       )}
