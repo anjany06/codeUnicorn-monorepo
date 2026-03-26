@@ -24,3 +24,27 @@ export async function getReviews(userId: string) {
     },
   }));
 }
+
+export async function getReviewById(reviewId: string, userId: string) {
+  const review = await prisma.review.findFirst({
+    where: {
+      id: reviewId,
+      repository: {
+        userId,
+      },
+    },
+    include: {
+      repository: true,
+    },
+  });
+
+  if (!review) return null;
+
+  return {
+    ...review,
+    repository: {
+      ...(review as any).repository,
+      githubId: (review as any).repository.githubId.toString(),
+    },
+  };
+}

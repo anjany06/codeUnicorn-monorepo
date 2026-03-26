@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useQuery } from "@tanstack/react-query";
 import { getReviews } from "@/lib/api";
@@ -12,6 +12,12 @@ export default function ReviewsPage() {
     queryKey: ["reviews"],
     queryFn: async () => {
       return await getReviews();
+    },
+    // Poll every 10 seconds if there are any pending reviews
+    refetchInterval: (query) => {
+      const data = query.state.data as ReviewItem[] | undefined;
+      const hasPending = data?.some((r) => r.status === "pending");
+      return hasPending ? 10000 : false;
     },
   });
 
@@ -34,10 +40,10 @@ export default function ReviewsPage() {
         ) : (
           <>
             <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-3 bg-muted/40 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              <div className="col-span-6">Pull Request</div>
+              <div className="col-span-5">Pull Request</div>
               <div className="col-span-3">Repository</div>
               <div className="col-span-2">Date</div>
-              <div className="col-span-1" />
+              <div className="col-span-2" />
             </div>
 
             <div className="divide-y divide-border/40">

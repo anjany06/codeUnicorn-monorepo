@@ -5,6 +5,7 @@ export interface ReviewItem {
   prTitle: string;
   prNumber: number;
   prUrl: string;
+  review: string;
   status: ReviewStatus;
   createdAt: string;
   repository: {

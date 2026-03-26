@@ -163,8 +163,9 @@ export const generateReview = inngest.createFunction(
   { event: "pr.review.requested" },
 
   async ({ event, step }) => {
-    const { owner, repo, prNumber, userId } = event.data;
+    const { owner, repo, prNumber, userId, reviewId } = event.data;
 
+    try {
     // Step 1: Fetch review config for this repository
     const config = await step.run("fetch-config", async () => {
       const repository = await prisma.repository.findFirst({
@@ -369,18 +370,17 @@ ${customRulesText}`;
       await updateComment((prData as any).token as string, owner, repo, statusCommentId, finalBody);
     });
 
-    // Step 8: Save review to database
+    // Step 8: Update the pending review record with the completed review
     await step.run("save-review", async () => {
       const repository = await prisma.repository.findFirst({
         where: { owner, name: repo },
       });
 
       if (repository) {
-        // Save the full structured review as JSON string
-        await prisma.review.create({
+        // Update the pending review with the completed data
+        await prisma.review.update({
+          where: { id: reviewId },
           data: {
-            repositoryId: repository.id,
-            prNumber,
             prTitle: prData.title,
             prUrl: `https://github.com/${owner}/${repo}/pull/${prNumber}`,
             review: JSON.stringify(structuredReview),
@@ -417,5 +417,16 @@ ${customRulesText}`;
       inlineComments: filteredComments.length,
       totalFindings: structuredReview.lineComments.length,
     };
+
+    } catch (error) {
+      // Mark the review as failed if anything goes wrong
+      if (reviewId) {
+        await prisma.review.update({
+          where: { id: reviewId },
+          data: { status: "failed" },
+        }).catch(() => {}); // Don't throw if update also fails
+      }
+      throw error; // Re-throw so Inngest can retry
+    }
   }
 );

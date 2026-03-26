@@ -1,4 +1,4 @@
-import { CheckCircle2, Clock, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { ReviewStatus } from "./types";
 
 export function ReviewStatusIcon({ status }: { status: ReviewStatus }) {
@@ -10,5 +10,5 @@ export function ReviewStatusIcon({ status }: { status: ReviewStatus }) {
     return <XCircle className="h-4 w-4 text-rose-500 mt-0.5 shrink-0" />;
   }
 
-  return <Clock className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />;
+  return <Loader2 className="h-4 w-4 text-amber-500 mt-0.5 shrink-0 animate-spin" />;
 }

@@ -78,6 +78,18 @@ webhookRouter.post("/github", async (req, res) => {
             return res.json({ success: true, skipped: true, reason: "Review limit reached" });
           }
 
+          // Create a pending review record immediately so it appears in the history
+          const pendingReview = await prisma.review.create({
+            data: {
+              repositoryId: repository.id,
+              prNumber,
+              prTitle: body.pull_request?.title || `PR #${prNumber}`,
+              prUrl: body.pull_request?.html_url || `https://github.com/${owner}/${repoName}/pull/${prNumber}`,
+              review: "",
+              status: "pending",
+            },
+          });
+
           await inngest.send({
             name: "pr.review.requested",
             data: {
@@ -86,6 +98,7 @@ webhookRouter.post("/github", async (req, res) => {
               prNumber,
               userId: repository.userId,
               repositoryId: repository.id,
+              reviewId: pendingReview.id,
             },
           });
         }

@@ -188,6 +188,11 @@ export async function getReviews() {
   return res.data || [];
 }
 
+export async function getReviewById(id: string) {
+  const res = await fetchApi<any>(`/api/reviews/${id}`);
+  return res.data;
+}
+
 // Subscription API
 export interface SubscriptionData {
   user: {

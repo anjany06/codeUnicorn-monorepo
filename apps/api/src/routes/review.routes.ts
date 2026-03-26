@@ -6,3 +6,6 @@ export const reviewRouter: RouterType = Router();
 
 // GET /api/reviews
 reviewRouter.get("/", authMiddleware, reviewController.getReviews);
+
+// GET /api/reviews/:id
+reviewRouter.get("/:id", authMiddleware, reviewController.getReviewById);
