@@ -82,15 +82,17 @@ export function ReviewRow({ review }: { review: ReviewItem }) {
         </div>
 
         <div className="col-span-2 flex justify-end items-center gap-2">
-          <Button size="sm" variant="ghost" asChild className="h-7 text-xs">
+          <Button size="sm" variant="outline" asChild className="h-7 text-xs">
             <a href={review.prUrl} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="h-4 w-4" />
+              PR
+              <ExternalLink className="ml-1 h-3 w-3" />
             </a>
           </Button>
           {isCompleted && (
-            <Button size="sm" variant="ghost" asChild className="h-7 text-xs text-emerald-500 hover:text-emerald-600 hover:bg-emerald-500/10">
+            <Button size="sm" variant="default" asChild className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700">
               <Link href={`/dashboard/reviews/${review.id}`}>
-                <ArrowRight className="h-4 w-4" />
+                View
+                <ArrowRight className="ml-1 h-3 w-3" />
               </Link>
             </Button>
           )}
