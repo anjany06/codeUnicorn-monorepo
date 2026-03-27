@@ -53,7 +53,15 @@ const structuredReviewSchema = z.object({
   suggestions: z.array(z.string()).describe("Specific, actionable code improvements or refactor ideas for this PR"),
   // Mermaid sequence diagram showing the flow introduced or changed by this PR
   sequenceDiagram: z.string()
-    .describe("A valid Mermaid JS sequence diagram (sequenceDiagram block) showing the flow introduced or changed by this PR. Always generate a diagram. Use only simple alphanumeric labels — no quotes, braces, or parentheses inside Note text."),
+    .describe(
+      "A valid Mermaid JS sequence diagram. STRICT RULES: " +
+      "1) Start with 'sequenceDiagram' on its own line. " +
+      "2) Each participant, arrow, Note, loop, alt, else, end MUST be on its own separate line delimited by a newline character. " +
+      "3) Participant names MUST be single words with NO spaces (use camelCase like FrontendApp, BackendAPI, AuthService, DB). " +
+      "4) Use 'participant X as Display Name' syntax if you want readable labels, e.g. 'participant FE as Frontend App'. " +
+      "5) Do NOT use quotes, braces, brackets, or parentheses inside Note text or message labels. " +
+      "6) Always generate a meaningful diagram for the PR flow."
+    ),
 });
 
 // ─── Helper: filter files by ignore patterns ────────────────────────────────
@@ -301,10 +309,28 @@ IMPORTANT INSTRUCTIONS:
 - Provide specific, actionable refactor or improvement ideas that are not tied to a single line.
 - Examples: extract a helper function, use a more efficient data structure, add input validation, improve error handling.
 
-### sequenceDiagram (required Mermaid)
+### sequenceDiagram (required Mermaid — STRICT FORMAT)
 - ALWAYS generate a sequenceDiagram block showing the flow introduced or changed by this PR.
 - For any PR — whether it adds an API endpoint, modifies business logic, updates a UI flow, or changes data processing — produce a meaningful sequence diagram illustrating the key interactions.
-- Use ONLY simple alphanumeric participant names and message labels. Do NOT use quotes, braces, parentheses, or special characters inside Note text or arrow labels — they break Mermaid rendering.
+- **CRITICAL FORMATTING RULES:**
+  1. Start with the keyword "sequenceDiagram" on its own line.
+  2. Every statement (participant, arrow, Note, loop, alt, else, end) MUST be on its OWN LINE separated by a newline character (\n).
+  3. Participant names MUST be single words with NO spaces — use camelCase (e.g. FrontendApp, BackendAPI, AuthService, DB). NEVER use multi-word names like "Frontend App" or "Backend App".
+  4. If a readable label is needed, use the alias syntax: "participant FE as Frontend App".
+  5. Do NOT use quotes, braces, brackets, or parentheses in Note text or message labels.
+  6. NEVER concatenate multiple statements on a single line.
+- Example of CORRECT format:
+  sequenceDiagram
+  participant Client
+  participant FE as Frontend App
+  participant BE as Backend API
+  participant DB as Database
+  Client->>FE: Submit form
+  FE->>BE: POST /api/data
+  BE->>DB: INSERT record
+  DB-->>BE: Success
+  BE-->>FE: 201 Created
+  FE-->>Client: Show success toast
 ${customRulesText}`;
 
       const { object } = await generateObject({
