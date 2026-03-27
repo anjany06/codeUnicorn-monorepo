@@ -1,14 +1,6 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import mermaid from "mermaid";
-
-mermaid.initialize({
-  startOnLoad: false,
-  theme: "dark",
-  securityLevel: "loose",
-  fontFamily: "inherit",
-});
 
 export function MermaidDiagram({ chart }: { chart: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -22,13 +14,29 @@ export function MermaidDiagram({ chart }: { chart: string }) {
     const renderDiagram = async () => {
       try {
         setError("");
+        
+        // Dynamically import mermaid to avoid Next.js SSR "window is not defined" issues
+        const mermaid = (await import("mermaid")).default;
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: "dark",
+          securityLevel: "loose",
+        });
+
         // Ensure the chart code isn't wrapped in markdown brackets
         const cleanChart = chart.replace(/```mermaid\n?|```/gi, "").trim();
         
+        // Parse first to catch syntax errors cleanly
+        await mermaid.parse(cleanChart);
+
         const id = `mermaid-${Math.random().toString(36).substring(2, 9)}`;
         const { svg } = await mermaid.render(id, cleanChart);
         
         if (isMounted) {
+          if (svg.includes("Syntax error in text")) {
+             setError("Mermaid returned a generic syntax error.");
+             return;
+          }
           setSvgStr(svg);
         }
       } catch (err: any) {

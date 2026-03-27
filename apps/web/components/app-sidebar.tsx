@@ -242,7 +242,7 @@ export const AppSidebar = ({
     <>
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 hidden overflow-x-hidden border-r border-border/60 bg-gradient-to-b from-background to-muted/20 backdrop-blur md:block",
+          "fixed inset-y-0 left-0 z-40 hidden overflow-x-hidden border-r border-border/60 bg-zinc-950/50 backdrop-blur-xl md:block",
           "transition-[width] duration-300 ease-out",
           collapsed ? "w-[92px]" : "w-[290px]"
         )}
