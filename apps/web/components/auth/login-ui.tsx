@@ -2,12 +2,28 @@
 
 import React, { useState } from "react";
 import { signIn } from "@/lib/auth-client";
-import { Github, Sparkles, ArrowLeft } from "lucide-react";
+import { Github, Sparkles, ArrowLeft, ArrowRight, Check } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { ConnectButton } from "@/app/dashboard/repository/_components/connect-button";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import { EtherealShadow } from "@/components/ui/etheral-shadow";
+
+const staggerContainer: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.15,
+      delayChildren: 0.1,
+    },
+  },
+};
+
+const fadeUpItem: Variants = {
+  hidden: { opacity: 0, y: 15 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
+};
 
 export default function LoginUI() {
   const [loading, setLoading] = useState(false);
@@ -44,37 +60,90 @@ export default function LoginUI() {
         className="absolute top-6 left-6 z-50 flex items-center gap-2 px-4 py-2 text-sm font-mono text-white/60 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 transition-all backdrop-blur-md"
       >
         <ArrowLeft className="w-4 h-4" />
-
       </Link>
 
       {/* Left side (hidden on small screens) */}
-      <div className="relative hidden w-[45%] flex-col items-center justify-center lg:flex bg-background z-10">
-        {/* Static EtherealShadow background (speed: 0 disables the swirling animation) */}
+      <div className="relative hidden w-[45%] lg:flex bg-zinc-950/40 z-10 p-12 overflow-hidden border-r border-white/5">
         <EtherealShadow
-          color="rgba(16, 185, 129, 0.2)"
-          animation={{ scale: 100, speed: 0 }}
-          noise={{ opacity: 1, scale: 1.2 }}
+          color="rgba(16, 185, 129, 0.15)"
+          animation={{ scale: 100, speed: 0.3 }}
+          noise={{ opacity: 0.9, scale: 1.2 }}
           className="z-0"
         />
 
-        {/* Hero content - Just text, no dashboard */}
-        <div className="text-center z-10 max-w-xl mx-auto flex flex-col items-center relative scale-90 origin-center">
-          <div className="inline-flex items-center gap-2 md:gap-3 px-3 py-1.5 md:px-5 md:py-2 rounded-full border border-white/20 bg-white/10 mb-8 text-[10px] md:text-xs font-mono text-white backdrop-blur-md shadow-[0_4px_14px_0_rgba(255,255,255,0.1)]">
-            <div className="flex items-center gap-3">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400"></span>
-              </span>
-              <span className="font-light text-white drop-shadow-md uppercase">Meet CodeUnicorn</span>
-            </div>
+        {/* Centralized staggering wrapper for performance */}
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+          className="z-10 flex flex-col justify-between h-full w-full"
+        >
+          <div className="flex-1" />
+
+          {/* Hero content */}
+          <div className="flex flex-col justify-center max-w-xl relative">
+            <motion.h1
+              variants={fadeUpItem}
+              className="text-4xl md:text-5xl lg:text-[64px] font-medium leading-[1.1] tracking-tight mb-8 text-white text-left"
+            >
+              Ship better code, <br />
+              <span className="font-serif italic text-emerald-500 font-light tracking-normal">magically faster.</span>
+            </motion.h1>
+
+            <motion.p
+              variants={fadeUpItem}
+              className="text-lg text-white/50 font-light max-w-md text-left leading-relaxed"
+            >
+              CodeUnicorn transforms your GitHub workflow with autonomous PR reviews, intelligent codebase search, and automated developer analytics.
+            </motion.p>
+
+            {/* SaaS "Try it now" CTA block */}
+            <motion.div
+              variants={fadeUpItem}
+              className="mt-8 flex flex-col items-start gap-6"
+            >
+              <div className="flex flex-col items-center gap-6 w-full max-w-md">
+                <div className="group cursor-pointer flex items-center gap-3 px-12 h-14 rounded-full bg-white/90 text-black font-semibold text-base transition-all hover:scale-105 active:scale-95">
+                  Try it now
+                  <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+                </div>
+
+                <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px]">
+                  <div className="flex items-center gap-1.5 text-white/40">
+                    <Check className="w-3.5 h-3.5 text-emerald-500/80" />  No credit card required
+                  </div>
+                  <div className="flex items-center gap-1.5 text-white/40">
+                    <Check className="w-3.5 h-3.5 text-emerald-500/80" /> 1-click connect
+                  </div>
+                  <div className="flex items-center gap-1.5 text-white/40">
+                    <Check className="w-3.5 h-3.5 text-emerald-500/80" /> Free open source
+                  </div>
+                </div>
+              </div>
+            </motion.div>
           </div>
-          <h1 className="text-5xl md:text-6xl lg:text-[82px] font-normal leading-tight tracking-tight mb-8">
-            GitHub Intelligence <br />
-            <span className="font-serif italic text-emerald-600">Platform.</span>
-          </h1>
-          <p className="text-lg text-foreground/70 font-light max-w-md">
-            Enhance GitHub workflows by combining intelligent PR reviews, codebase understanding, and developer analytics into one unified tool.
-          </p>
-        </div>
+
+          <div className="flex-1" />
+
+          {/* Bottom Testimonial / Social Proof */}
+          <motion.div
+            variants={fadeUpItem}
+            className="pb-4 pt-8 border-t border-white/5 mt-auto"
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex -space-x-3">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="w-9 h-9 rounded-full border-2 border-background bg-zinc-800 flex items-center justify-center overflow-hidden shadow-lg">
+                    <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${i + 15}&backgroundColor=transparent`} alt={`User ${i}`} className="w-full h-full object-cover opacity-90" />
+                  </div>
+                ))}
+              </div>
+              <div className="text-sm text-white/50">
+                Joined by <span className="text-white font-medium">20+</span> top developers
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
       </div>
 
       {/* Right side - existing login form */}

@@ -101,64 +101,6 @@ function renderWalkthrough(text: string) {
   });
 }
 
-// Ensure sequence diagram has proper newlines — robust parser
-export function formatSequenceDiagram(raw: string): string {
-  let s = raw.trim();
-
-  // Remove ```mermaid fences
-  s = s.replace(/^```mermaid\s*/i, "").replace(/\s*```\s*$/, "").trim();
-
-  // Force sequenceDiagram on top
-  if (!s.startsWith("sequenceDiagram")) {
-    s = "sequenceDiagram\n" + s;
-  }
-
-  // Break before known keywords
-  const keywords = [
-    "participant",
-    "actor",
-    "Note",
-    "loop",
-    "alt",
-    "else",
-    "opt",
-    "par",
-    "critical",
-    "break",
-    "rect",
-    "activate",
-    "deactivate",
-    "end",
-  ];
-
-  keywords.forEach((kw) => {
-    const regex = new RegExp(`\\s*${kw}\\s+`, "g");
-    s = s.replace(regex, `\n${kw} `);
-  });
-
-  // Fix arrows (MOST IMPORTANT FIX)
-  // Break BEFORE every arrow occurrence
-  s = s.replace(/([^\n])(\b\w+\s*(?:->>|-->>))/g, "$1\n$2");
-
-  // Break AFTER message labels (colon)
-  s = s.replace(/:\s*([^\n]+)/g, (match) => {
-    return match.replace(/([^\n])(\b\w+\s*(->>|-->>))/g, "$1\n$2");
-  });
-
-  // Fix participant names (remove spaces → camelCase-ish)
-  s = s.replace(/participant\s+([A-Za-z0-9]+)\s+([A-Za-z0-9]+)/g, (_, a, b) => {
-    return `participant ${a}${b}`;
-  });
-
-  // Clean multiple newlines
-  s = s
-    .split("\n")
-    .map((l) => l.trim())
-    .filter(Boolean)
-    .join("\n");
-
-  return s;
-}
 // Collapsible section
 function Section({
   title,
@@ -454,7 +396,7 @@ export default function ReviewDetailPage({
       {sequenceDiagram && (
         <Section title="Sequence Diagram" icon={<FileCode2 className="h-4 w-4" />} defaultOpen={false}>
           <pre className="text-xs bg-muted/30 border border-border/40 rounded-lg p-4 overflow-x-auto whitespace-pre-wrap">
-            <code>{formatSequenceDiagram(sequenceDiagram)}</code>
+            <code>{sequenceDiagram}</code>
           </pre>
         </Section>
       )}
