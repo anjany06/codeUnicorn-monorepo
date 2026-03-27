@@ -11,7 +11,7 @@ export function Features() {
           <p className="text-foreground/50">Core capacities integrating advanced features and actionable insights.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[300px]">
+        <div className="grid grid-cols-1 md:grid-cols-3 auto-rows-[300px]">
           {/* Card 1 */}
           <BentoCard
             className="md:col-span-2 relative group"
@@ -60,7 +60,7 @@ function BentoCard({ title, description, icon, className = "", children }: { tit
         </div>
         <div className="mt-8">
           <h3 className="text-2xl font-light">{title}</h3>
-          {description && <p className="text-foreground/60 text-sm mt-3 leading-relaxed max-w-sm">{description}</p>}
+          {description && <p className="text-foreground/60 text-sm mt-4 max-w-full">{description}</p>}
         </div>
       </div>
       {children}

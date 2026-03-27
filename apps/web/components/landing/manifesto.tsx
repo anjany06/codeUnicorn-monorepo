@@ -14,7 +14,7 @@ export function Manifesto() {
   const blurTransform = useTransform(scrollYProgress, [0, 1], ["8px", "0px"]);
 
   return (
-    <section ref={ref} className="relative min-h-[70vh] flex items-center justify-center px-4 border-y border-white/5 py-32 bg-background">
+    <section ref={ref} className="relative min-h-[50vh] md:min-h-[70vh] flex items-center justify-center px-4 border-y border-white/5 py-32 bg-background">
       {/* Background Parallax text */}
       <h2 className="absolute text-[15vw] font-serif italic text-white/5 whitespace-nowrap opacity-20 pointer-events-none select-none">
         Intelligence
