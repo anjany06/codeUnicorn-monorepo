@@ -9,7 +9,7 @@ export function MermaidDiagram({ chart }: { chart: string }) {
 
   useEffect(() => {
     let isMounted = true;
-    if (!chart || !containerRef.current) return;
+    if (!chart) return;
 
     const renderDiagram = async () => {
       try {
