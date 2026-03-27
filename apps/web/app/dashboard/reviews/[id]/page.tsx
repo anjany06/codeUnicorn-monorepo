@@ -20,6 +20,7 @@ import {
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
+import { MermaidDiagram } from "@/components/mermaid-diagram";
 
 // Severity badge styling
 function SeverityBadge({ severity }: { severity: string }) {
@@ -395,9 +396,9 @@ export default function ReviewDetailPage({
       {/* Sequence Diagram */}
       {sequenceDiagram && (
         <Section title="Sequence Diagram" icon={<FileCode2 className="h-4 w-4" />} defaultOpen={false}>
-          <pre className="text-xs bg-muted/30 border border-border/40 rounded-lg p-4 overflow-x-auto whitespace-pre-wrap">
-            <code>{sequenceDiagram}</code>
-          </pre>
+          <div className="bg-muted/30 border border-border/40 rounded-lg p-2 min-h-[300px]">
+             <MermaidDiagram chart={sequenceDiagram} />
+          </div>
         </Section>
       )}
     </div>
