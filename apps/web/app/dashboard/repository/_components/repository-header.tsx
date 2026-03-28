@@ -17,16 +17,25 @@ export function RepositoryHeader({
   onShowConnectedOnlyChange,
 }: RepositoryHeaderProps) {
   return (
-    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-      <div>
+    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between w-full">
+      <div className="shrink-0">
         <h1 className="text-2xl font-heading font-semibold">Repositories</h1>
         <p className="text-md text-muted-foreground">
           Manage and connect your GitHub repositories
         </p>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="flex items-center space-x-2">
+      <div className="flex w-full items-center gap-4 md:w-auto md:flex-1 md:justify-end">
+        <div className="relative flex-1 md:max-w-sm lg:max-w-md">
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search repositories..."
+            className="pl-9 h-9 w-full"
+            value={searchQuery}
+            onChange={(e) => onSearchQueryChange(e.target.value)}
+          />
+        </div>
+        <div className="flex shrink-0 items-center space-x-2">
           <Switch
             id="connected-only"
             checked={showConnectedOnly}
@@ -35,15 +44,6 @@ export function RepositoryHeader({
           <Label htmlFor="connected-only" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 whitespace-nowrap">
             Connected Only
           </Label>
-        </div>
-        <div className="relative w-full md:w-80 lg:w-96">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search repositories..."
-            className="pl-9 h-9"
-            value={searchQuery}
-            onChange={(e) => onSearchQueryChange(e.target.value)}
-          />
         </div>
       </div>
     </div>
