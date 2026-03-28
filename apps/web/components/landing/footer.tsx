@@ -22,9 +22,9 @@ export function Footer() {
         </h2>
 
         <div className="flex items-center justify-center gap-8 font-mono text-sm text-foreground/40">
-          <a href="#" className="hover:text-primary transition-colors">Twitter</a>
-          <a href="#" className="hover:text-primary transition-colors">GitHub</a>
-          <a href="#" className="hover:text-primary transition-colors">Linkedin</a>
+          <a href="https://x.com/anjany06" className="hover:text-primary transition-colors">Twitter</a>
+          <a href="https://github.com/anjany06" className="hover:text-primary transition-colors">GitHub</a>
+          <a href="https://www.linkedin.com/in/anjany-pandey-927169294/" className="hover:text-primary transition-colors">Linkedin</a>
         </div>
       </div>
 

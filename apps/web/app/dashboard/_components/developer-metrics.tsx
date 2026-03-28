@@ -288,7 +288,7 @@ export function DeveloperMetrics({ data, isLoading }: Props) {
                 value={data.reviewsTriggered}
                 sub={
                   <span className="text-xs text-muted-foreground">
-                    Avg {data.avgIssuesPerReview} issues / review
+                    Avg {Math.round(data.avgIssuesPerReview)} issues / review
                   </span>
                 }
               />

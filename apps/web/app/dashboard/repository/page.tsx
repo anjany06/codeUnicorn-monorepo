@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -38,6 +38,7 @@ export default function RepositoryPage() {
     null,
   );
   const [searchQuery, setSearchQuery] = useState("");
+  const [showConnectedOnly, setShowConnectedOnly] = useState(false);
   const observerTarget = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -94,9 +95,15 @@ export default function RepositoryPage() {
   const allRepositories = data?.pages.flatMap((page) => page) || [];
 
   const filteredRepositories = allRepositories.filter(
-    (repo: Repository) =>
-      repo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      repo.full_name.toLowerCase().includes(searchQuery.toLowerCase()),
+    (repo: Repository) => {
+      const matchesSearch = repo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            repo.full_name.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const isConnected = repo.isConnected || connectedByGithubId.has(String(repo.id));
+
+      if (showConnectedOnly && !isConnected) return false;
+      return matchesSearch;
+    }
   );
 
   const handleConnect = (repo: Repository) => {
@@ -119,6 +126,8 @@ export default function RepositoryPage() {
       <RepositoryHeader
         searchQuery={searchQuery}
         onSearchQueryChange={setSearchQuery}
+        showConnectedOnly={showConnectedOnly}
+        onShowConnectedOnlyChange={setShowConnectedOnly}
       />
 
       <div className="border border-border/50 rounded-xl bg-background overflow-hidden">
