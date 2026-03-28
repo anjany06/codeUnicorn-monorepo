@@ -1,6 +1,6 @@
 # 🦄 CodeUnicorn
 
-![CodeUnicorn Hero](./front-page-2.png)
+![CodeUnicorn Hero](./apps/web/public/front-page-2.png)
 
 **CodeUnicorn is an intelligent GitHub Intelligence Platform that enhances your engineering workflows by combining automated PR reviews, codebase understanding, and developer analytics into one unified tool.**
 
@@ -17,8 +17,8 @@ It serves as a smart AI companion for developers, helping teams review code fast
 - **📚 AI Documentation Generation (RAG-Powered):** Effortlessly generate READMEs, onboarding guides, and system design documents built dynamically from your actual codebase structure.
 - **⚙️ Deep Customization:** Control how AI reviews your code by configuring focus areas, ignore paths, and custom review rules.
 
-![Dashboard Preview 1](./dashboard-pat1-1.png)
-![Dashboard Preview 2](./dashboard-part-2.png)
+![Dashboard Preview 1](./apps/web/public/dashboard-part-1.png)
+![Dashboard Preview 2](./apps/web/public/dashboard-part-2.png)
 
 ---
 
@@ -57,6 +57,7 @@ codeunicorn-monorepo/
 - **`@codeunicorn/database`:** PostgreSQL with [Prisma ORM](https://www.prisma.io/).
 - **`@codeunicorn/ai`:** **Retrieval-Augmented Generation (RAG)** pipeline using [Vercel AI SDK](https://sdk.vercel.ai/), Google GenAI, and Pinecone Vector DB for context-aware context retrieval.
 - **`@codeunicorn/github`:** GitHub API integration using [Octokit](https://github.com/octokit).
+- **`@codeunicorn/inngest`:** Internal package for reliable background job orchestration.
 - **`@codeunicorn/types` & `@codeunicorn/ui`:** Shared configurations and UI library.
 
 ### Infrastructure & Deployment
