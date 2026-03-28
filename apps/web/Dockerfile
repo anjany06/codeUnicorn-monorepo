@@ -36,9 +36,7 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 # Build the project and its dependencies
 RUN pnpm turbo build --filter=web...
 
-# ============================================
 # Stage 4: Runner
-# ============================================
 FROM base AS runner
 WORKDIR /app
 
