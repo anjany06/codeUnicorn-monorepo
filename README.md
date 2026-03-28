@@ -49,8 +49,15 @@ codeunicorn-monorepo/
 ## 🛠️ Architecture & Tech Stack
 
 ### Application Layer
-- **Frontend (`apps/web`):** [Next.js](https://nextjs.org/) (App Router), React 19, TailwindCSS, Radix UI.
-- **Backend (`apps/api`):** [Express](https://expressjs.com/) & Node.js API server.
+- **Frontend (`apps/web`):**
+  - [Next.js](https://nextjs.org/) (App Router), React 19.
+  - **State & Data Fetching:** [TanStack Query](https://tanstack.com/query/latest) (React Query) for robust asynchronous state management.
+  - **Styling & UI:** TailwindCSS, [Radix UI](https://www.radix-ui.com/) (Headless accessible components), and Lucide React (Icons).
+  - **Animations & Visuals:** [Framer Motion](https://www.framer.com/motion/) for fluid animations, and [Recharts](https://recharts.org/) for rendering the dynamic developer metadata and contribution graphs.
+  - **Content Rendering:** React Markdown & Mermaid.js for rich UI code and sequence diagram rendering.
+- **Backend (`apps/api`):** 
+  - [Express](https://expressjs.com/) & Node.js API server.
+  - **Authentication:** [Better Auth](https://github.com/polar-sh/better-auth) for secure credential configuration.
 - **Background Jobs (`@codeunicorn/inngest`):** Powered by [Inngest](https://www.inngest.com/) for reliable event-driven background tasks (like queuing high-latency repository indexing or responding to asynchronous webhook PR events).
 
 ### Packages (`packages/*`)
