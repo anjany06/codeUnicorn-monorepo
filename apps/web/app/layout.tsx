@@ -6,6 +6,7 @@ import { QueryProvider } from "@/components/providers/query-provider";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { Toaster } from "sonner";
+import { Analytics } from "@vercel/analytics/react";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -75,6 +76,7 @@ export default function RootLayout({
               disableTransitionOnChange
             >
               {children}
+              <Analytics />
               <Toaster />
             </ThemeProvider>
           </AuthProvider>
