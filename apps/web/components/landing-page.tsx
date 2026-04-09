@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "@/lib/auth-client";
 
 import { Navbar } from "@/components/landing/navbar";
 import { Hero } from "@/components/landing/hero";
@@ -14,7 +16,16 @@ import { FAQ } from "@/components/landing/faq";
 import { Footer } from "@/components/landing/footer";
 
 export function LandingPage() {
+  const router = useRouter();
+  const { data: session, isPending } = useSession();
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Redirect logged-in users to dashboard
+  useEffect(() => {
+    if (!isPending && session?.user) {
+      router.replace("/dashboard");
+    }
+  }, [isPending, session, router]);
 
   // Setup smooth scroll feeling natively as instructed by generic lenis usage
   useEffect(() => {
