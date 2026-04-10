@@ -14,11 +14,15 @@ import { TechnicalProof } from "@/components/landing/technical-proof";
 import { TicketPricing } from "@/components/landing/ticket-pricing";
 import { FAQ } from "@/components/landing/faq";
 import { Footer } from "@/components/landing/footer";
+import { usePrewarmBackend } from "@/hooks/use-prewarm-backend";
 
 export function LandingPage() {
   const router = useRouter();
   const { data: session, isPending } = useSession();
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Pre-warm the backend on Render while user browses the landing page
+  usePrewarmBackend();
 
   // Redirect logged-in users to dashboard
   useEffect(() => {
