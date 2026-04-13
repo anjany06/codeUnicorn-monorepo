@@ -3,6 +3,8 @@
 import React, { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
+import Lenis from "lenis";
+import "lenis/dist/lenis.css";
 
 import { Navbar } from "@/components/landing/navbar";
 import { Hero } from "@/components/landing/hero";
@@ -31,11 +33,14 @@ export function LandingPage() {
     }
   }, [isPending, session, router]);
 
-  // Setup smooth scroll feeling natively as instructed by generic lenis usage
+  // Setup smooth scroll using Lenis
   useEffect(() => {
-    document.documentElement.style.scrollBehavior = "smooth";
+    const lenis = new Lenis({
+      autoRaf: true,
+    });
+
     return () => {
-      document.documentElement.style.scrollBehavior = "auto";
+      lenis.destroy();
     };
   }, []);
 
