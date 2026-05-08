@@ -288,7 +288,7 @@ export async function postBotStatusComment(
     `| **Started** | ${now} |`,
     ``,
     `---`,
-    `*Powered by [CodeUnicorn](https://codeunicorn.vercel.app) · AI-powered code reviews*`,
+    `*Powered by [CodeUnicorn](https://codeunicorn.anjany.me) · AI-powered code reviews*`,
   ].join("\n");
 
   const { data } = await octokit.rest.issues.createComment({

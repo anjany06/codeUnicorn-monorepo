@@ -391,7 +391,7 @@ ${customRulesText}`;
         lineComments: filteredComments,
       });
 
-      const finalBody = `## 🦄 CodeUnicorn AI Review\n\n${summaryMarkdown}\n\n---\n*Powered by [CodeUnicorn](https://codeunicorn.vercel.app) \u00b7 AI-powered code reviews*`;
+      const finalBody = `## 🦄 CodeUnicorn AI Review\n\n${summaryMarkdown}\n\n---\n*Powered by [CodeUnicorn](https://codeunicorn.anjany.me) \u00b7 AI-powered code reviews*`;
 
       await updateComment((prData as any).token as string, owner, repo, statusCommentId, finalBody);
     });

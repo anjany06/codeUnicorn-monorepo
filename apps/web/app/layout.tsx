@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "CodeUnicorn",
     description: "CodeUnicorn is a GitHub Intelligence Platform combining intelligent PR reviews, codebase understanding, and developer analytics to enhance workflows and code quality.",
-    url: "https://codeunicorn.vercel.app",
+    url: "https://codeunicorn.anjany.me",
     siteName: "CodeUnicorn",
     images: [
       {
