@@ -23,6 +23,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://codeunicorn.anjany.me"),
   title: "CodeUnicorn",
   description: "CodeUnicorn is a GitHub Intelligence Platform combining intelligent PR reviews, codebase understanding, and developer analytics to enhance workflows and code quality.",
   icons: {
@@ -37,7 +38,7 @@ export const metadata: Metadata = {
     siteName: "CodeUnicorn",
     images: [
       {
-        url: "/code-logo-bg.png",
+        url: "/front-page-2.png",
         width: 1200,
         height: 630,
         alt: "CodeUnicorn Background",
@@ -50,7 +51,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "CodeUnicorn",
     description: "CodeUnicorn is a GitHub Intelligence Platform combining intelligent PR reviews, codebase understanding, and developer analytics to enhance workflows and code quality.",
-    images: ["/code-logo-bg.png"],
+    images: ["/front-page-2.png"],
   },
 };
 
