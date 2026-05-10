@@ -1,88 +1,161 @@
+/**
+ * RAG (Retrieval-Augmented Generation) pipeline — powered by LangChain.
+ *
+ * Uses:
+ *  - LangChain RecursiveCharacterTextSplitter for language-aware code chunking
+ *  - Custom LangChain Embeddings wrapper (Vercel AI SDK + Gemini) for 768-dim vectors
+ *  - Pinecone for vector storage and retrieval
+ *  - Vercel AI SDK for text generation (doc generation)
+ */
 
-
-import {embed} from "ai";
-import {createGoogleGenerativeAI, google}from "@ai-sdk/google";
+import { Embeddings, type EmbeddingsParams } from "@langchain/core/embeddings";
+import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
+import { embed } from "ai";
+import { google } from "@ai-sdk/google";
 import { pineconeIndex } from "./pinecone";
 
-// ─── Rate-limiting helpers ──────────────────────────────────────────────────
+// Custom LangChain Embeddings (wraps Vercel AI SDK for exact 768-dim compat) 
 
-const RATE_LIMIT_DELAY_MS = 1500; // 1.5 s between embedding calls (Gemini free tier: ~1500 RPM)
-const MAX_RETRIES = 5;
-const BASE_BACKOFF_MS = 2000;
+const RATE_LIMIT_DELAY_MS = 1500;
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export async function generateEmbedding(text: string): Promise<number[]> {
-  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-    try {
+class GeminiEmbeddings extends Embeddings {
+  private lastCallTime = 0;
+
+  constructor(params?: EmbeddingsParams) {
+    super({ maxRetries: 5, ...(params ?? {}) });
+  }
+
+  async embedDocuments(texts: string[]): Promise<number[][]> {
+    const results: number[][] = [];
+    for (const text of texts) {
+      results.push(await this.embedQuery(text));
+      // Rate-limit between calls for Gemini free tier
+      await sleep(RATE_LIMIT_DELAY_MS);
+    }
+    return results;
+  }
+
+  async embedQuery(text: string): Promise<number[]> {
+    return this.caller.call(async () => {
       const { embedding } = await embed({
         model: google.textEmbeddingModel("gemini-embedding-001"),
         value: text,
         providerOptions: {
-          google: {
-            outputDimensionality: 768, // matching the existing Pinecone index dimension
-          },
+          google: { outputDimensionality: 768 },
         },
       });
       return embedding;
-    } catch (error: any) {
-      const isRateLimit =
-        error?.statusCode === 429 ||
-        error?.message?.includes("RESOURCE_EXHAUSTED") ||
-        error?.data?.error?.status === "RESOURCE_EXHAUSTED" ||
-        error?.isRetryable;
-
-      if (isRateLimit && attempt < MAX_RETRIES - 1) {
-        const backoff = BASE_BACKOFF_MS * Math.pow(2, attempt); // 2s, 4s, 8s, 16s, 32s
-        console.warn(
-          `Rate limited (attempt ${attempt + 1}/${MAX_RETRIES}). Retrying in ${backoff}ms...`
-        );
-        await sleep(backoff);
-        continue;
-      }
-      throw error;
-    }
+    });
   }
-  throw new Error("generateEmbedding: max retries exceeded");
 }
 
-export async function indexCodebase(repoId:string, files:{path:string, content:string}[]){
-  const vectors = [];
+// Shared singleton — LangChain's built-in `this.caller` handles retries + backoff
+const embeddings = new GeminiEmbeddings();
 
-  for (let i = 0; i < files.length; i++){
-    const file = files[i];
-    if (!file) continue;
-    const content = `File : ${file.path}\n\n${file.content}`;
+// Language-Aware Text Splitters 
 
-    const truncatedContent = content.slice(0, 8000); // Truncate to first 8000 characters
+const CHUNK_SIZE = 4000;
+const CHUNK_OVERLAP = 400;
 
-    try {
-      const embedding = await generateEmbedding(truncatedContent);
-      vectors.push({
-        id: `${repoId}-${file.path.replace(/\//g, "-")}`,
-        values: embedding,
-        metadata:{
-          repoId,
-          path:file.path,
-          content: truncatedContent,
-        }
-      })
-    } catch (error) {
-      console.log(`Failed to generate embedding for file ${file.path}:`, error);
+const JS_EXTS = new Set(["ts", "tsx", "js", "jsx", "mjs", "cjs", "vue", "svelte"]);
+const PY_EXTS = new Set(["py", "pyx", "pyi"]);
+const GO_EXTS = new Set(["go"]);
+const JAVA_EXTS = new Set(["java", "kt", "kts"]);
+const RUST_EXTS = new Set(["rs"]);
+const RUBY_EXTS = new Set(["rb"]);
+const PHP_EXTS = new Set(["php"]);
+const CPP_EXTS = new Set(["c", "cpp", "cc", "h", "hpp"]);
+const MD_EXTS = new Set(["md", "mdx"]);
+const HTML_EXTS = new Set(["html", "htm", "xml"]);
+
+type SplitterLanguage = Parameters<typeof RecursiveCharacterTextSplitter.fromLanguage>[0];
+
+const LANG_MAP: [Set<string>, SplitterLanguage][] = [
+  [JS_EXTS, "js"],
+  [PY_EXTS, "python"],
+  [GO_EXTS, "go"],
+  [JAVA_EXTS, "java"],
+  [RUST_EXTS, "rust"],
+  [RUBY_EXTS, "ruby"],
+  [PHP_EXTS, "php"],
+  [CPP_EXTS, "cpp"],
+  [MD_EXTS, "markdown"],
+  [HTML_EXTS, "html"],
+];
+
+function getSplitterForFile(filePath: string): RecursiveCharacterTextSplitter {
+  const ext = filePath.split(".").pop()?.toLowerCase() || "";
+  for (const [exts, lang] of LANG_MAP) {
+    if (exts.has(ext)) {
+      return RecursiveCharacterTextSplitter.fromLanguage(lang, {
+        chunkSize: CHUNK_SIZE,
+        chunkOverlap: CHUNK_OVERLAP,
+      });
     }
+  }
+  return new RecursiveCharacterTextSplitter({
+    chunkSize: CHUNK_SIZE,
+    chunkOverlap: CHUNK_OVERLAP,
+  });
+}
 
-    // Rate-limit: pause between requests to avoid RESOURCE_EXHAUSTED
-    if (i < files.length - 1) {
+//  Exported: generateEmbedding (kept for backward compat)
+
+export async function generateEmbedding(text: string): Promise<number[]> {
+  return embeddings.embedQuery(text);
+}
+
+//  Exported: indexCodebase 
+export async function indexCodebase(
+  repoId: string,
+  files: { path: string; content: string }[]
+) {
+  const vectors: {
+    id: string;
+    values: number[];
+    metadata: { repoId: string; path: string; content: string; chunkIndex: number };
+  }[] = [];
+
+  for (const file of files) {
+    if (!file) continue;
+
+    const fullContent = `File: ${file.path}\n\n${file.content}`;
+    const splitter = getSplitterForFile(file.path);
+    const chunks = await splitter.splitText(fullContent);
+
+    for (let ci = 0; ci < chunks.length; ci++) {
+      const chunkText = chunks[ci]!;
+      try {
+        const embedding = await embeddings.embedQuery(chunkText);
+        const safePathPart = file.path.replace(/\//g, "-");
+        vectors.push({
+          id: `${repoId}-${safePathPart}-chunk-${ci}`,
+          values: embedding,
+          metadata: {
+            repoId,
+            path: file.path,
+            content: chunkText,
+            chunkIndex: ci,
+          },
+        });
+      } catch (error) {
+        console.log(`Failed to embed ${file.path} chunk ${ci}:`, error);
+      }
+
+      // Rate-limit between embedding calls
       await sleep(RATE_LIMIT_DELAY_MS);
     }
   }
-  if(vectors.length > 0){
+
+  // Batch upsert to Pinecone
+  if (vectors.length > 0) {
     const batchSize = 100;
-    for(let i=0; i < vectors.length; i += batchSize){
-      const batch = vectors.slice(i, i + batchSize);
-      await pineconeIndex.upsert(batch);
+    for (let i = 0; i < vectors.length; i += batchSize) {
+      await pineconeIndex.upsert(vectors.slice(i, i + batchSize));
     }
   }
 
@@ -90,64 +163,88 @@ export async function indexCodebase(repoId:string, files:{path:string, content:s
   return vectors.length;
 }
 
-export async function retrieveContext(query:string, repoId:string, topK:number=5){
-  const embedding = await generateEmbedding(query);
+//  Exported: retrieveContext
+export async function retrieveContext(
+  query: string,
+  repoId: string,
+  topK: number = 5
+) {
+  const queryEmbedding = await embeddings.embedQuery(query);
 
   const results = await pineconeIndex.query({
-    vector:embedding,
-    filter:{repoId},
+    vector: queryEmbedding,
+    filter: { repoId },
     topK,
-    includeMetadata:true,
+    includeMetadata: true,
   });
 
-  return results.matches.map(match=> match.metadata?.content as string).filter(Boolean);
+  return results.matches
+    .map((match) => match.metadata?.content as string)
+    .filter(Boolean);
 }
 
-// ─── Feature 3: Delta Re-Indexing on Push ───────────────────────────────────
-
-/**
- * Update the vector index with only changed files (delta indexing).
- * Much faster than full re-index — only processes files that changed in a push.
- */
+//  Exported: updateCodebaseIndex (delta re-indexing on push)
 export async function updateCodebaseIndex(
   repoId: string,
   changedFiles: { path: string; content: string }[],
   removedPaths: string[]
 ) {
-  // Delete vectors for removed files
+  // 1. Delete vectors for removed files (metadata filter)
   if (removedPaths.length > 0) {
-    const idsToDelete = removedPaths.map(
-      (p) => `${repoId}-${p.replace(/\//g, "-")}`
-    );
-    try {
-      await pineconeIndex.deleteMany(idsToDelete);
-      console.log(`Deleted ${idsToDelete.length} vectors for removed files`);
-    } catch (error) {
-      console.error("Failed to delete vectors for removed files:", error);
+    for (const filePath of removedPaths) {
+      try {
+        await pineconeIndex.deleteMany({ repoId, path: filePath });
+        console.log(`Deleted vectors for removed file: ${filePath}`);
+      } catch (error) {
+        console.error(`Failed to delete vectors for ${filePath}:`, error);
+      }
     }
   }
 
-  // Index changed/added files (same logic as indexCodebase but for delta)
+  // 2. Delete old chunks for changed files, then re-index them
   if (changedFiles.length > 0) {
-    const vectors = [];
-    for (let i = 0; i < changedFiles.length; i++) {
-      const file = changedFiles[i];
-      if (!file) continue;
-      const content = `File : ${file.path}\n\n${file.content}`;
-      const truncatedContent = content.slice(0, 8000);
+    // Delete existing chunks for all changed files first
+    for (const file of changedFiles) {
       try {
-        const embedding = await generateEmbedding(truncatedContent);
-        vectors.push({
-          id: `${repoId}-${file.path.replace(/\//g, "-")}`,
-          values: embedding,
-          metadata: { repoId, path: file.path, content: truncatedContent },
-        });
+        await pineconeIndex.deleteMany({ repoId, path: file.path });
       } catch (error) {
-        console.log(`Failed to generate embedding for file ${file.path}:`, error);
+        console.error(`Failed to delete old chunks for ${file.path}:`, error);
       }
+    }
 
-      // Rate-limit: pause between requests to avoid RESOURCE_EXHAUSTED
-      if (i < changedFiles.length - 1) {
+    // Now re-index changed files with language-aware chunking
+    const vectors: {
+      id: string;
+      values: number[];
+      metadata: { repoId: string; path: string; content: string; chunkIndex: number };
+    }[] = [];
+
+    for (const file of changedFiles) {
+      if (!file) continue;
+
+      const fullContent = `File: ${file.path}\n\n${file.content}`;
+      const splitter = getSplitterForFile(file.path);
+      const chunks = await splitter.splitText(fullContent);
+
+      for (let ci = 0; ci < chunks.length; ci++) {
+        const chunkText = chunks[ci]!;
+        try {
+          const embedding = await embeddings.embedQuery(chunkText);
+          const safePathPart = file.path.replace(/\//g, "-");
+          vectors.push({
+            id: `${repoId}-${safePathPart}-chunk-${ci}`,
+            values: embedding,
+            metadata: {
+              repoId,
+              path: file.path,
+              content: chunkText,
+              chunkIndex: ci,
+            },
+          });
+        } catch (error) {
+          console.log(`Failed to embed ${file.path} chunk ${ci}:`, error);
+        }
+
         await sleep(RATE_LIMIT_DELAY_MS);
       }
     }
@@ -166,7 +263,7 @@ export async function updateCodebaseIndex(
   return 0;
 }
 
-// ─── Feature A: Documentation Generation ──────────────────────────────────
+//  Feature A: Documentation Generation (Multi-Query RAG)
 
 const DOC_QUERIES: Record<string, string[]> = {
   readme: [
@@ -203,9 +300,10 @@ Mermaid requirements:
   onboarding: `You are a senior developer writing an onboarding guide for new contributors. Generate a step-by-step onboarding document covering: prerequisites, cloning and setup, environment configuration (list every env var with description), running locally, project structure walkthrough (every important file/folder), coding conventions, how tests work, how to open a PR, and common gotchas. Make it friendly and thorough.`,
 };
 
-/**
- * Generate a documentation markdown document for a repository using RAG context.
- */
+//  Generate a documentation markdown document for a repository using RAG context.
+ //  Uses multi-query retrieval: fires several focused queries per doc type,
+ //  deduplicates the results, then feeds combined context to Gemini.
+ 
 export async function generateDocMarkdown(
   repoId: string,
   docType: string,
@@ -246,13 +344,14 @@ export async function generateDocMarkdown(
   return text;
 }
 
-/**
- * Delete all vectors for a given repository.
- * Used when disconnecting a repo to clean up Pinecone.
- */
+//  Exported: deleteRepoVectors
+
+ //  Delete all vectors for a given repository.
+ //  Used when disconnecting a repo to clean up Pinecone.
+
 export async function deleteRepoVectors(repoId: string) {
   try {
-    // Pinecone supports deleteMany with a filter
+    // Pinecone supports deleteMany with a metadata filter
     await pineconeIndex.deleteMany({ repoId });
     console.log(`Deleted all vectors for repo: ${repoId}`);
   } catch (error) {

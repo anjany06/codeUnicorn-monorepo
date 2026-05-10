@@ -2,7 +2,7 @@
 FROM node:20-alpine AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
+RUN corepack enable && corepack prepare pnpm@9 --activate
 
 
 # Stage 2: Prune workspace for the API
@@ -10,7 +10,7 @@ FROM base AS builder
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 # Install turbo globally
-RUN pnpm i -g turbo@^2.3.0
+RUN pnpm i -g turbo@2.8.14
 COPY . .
 # Prune the workspace to only include the api app and its dependencies
 RUN turbo prune @codeunicorn/api --docker
