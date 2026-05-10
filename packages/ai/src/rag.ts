@@ -3,40 +3,62 @@
  *
  * Uses:
  *  - LangChain RecursiveCharacterTextSplitter for language-aware code chunking
- *  - Custom LangChain Embeddings wrapper (Vercel AI SDK + Gemini) for 768-dim vectors
+ *  - Vercel AI SDK embedMany for fast batch embedding (Gemini 768-dim)
  *  - Pinecone for vector storage and retrieval
  *  - Vercel AI SDK for text generation (doc generation)
  */
 
 import { Embeddings, type EmbeddingsParams } from "@langchain/core/embeddings";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
-import { embed } from "ai";
+import { embed, embedMany } from "ai";
 import { google } from "@ai-sdk/google";
 import { pineconeIndex } from "./pinecone";
 
-// Custom LangChain Embeddings (wraps Vercel AI SDK for exact 768-dim compat) 
+// ─── Embedding Helpers ──────────────────────────────────────────────────────
 
-const RATE_LIMIT_DELAY_MS = 1500;
+/** Delay between batches — kept low since batch calls are efficient */
+const BATCH_DELAY_MS = 300;
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-class GeminiEmbeddings extends Embeddings {
-  private lastCallTime = 0;
+/**
+ * Batch-embed texts using Vercel AI SDK's embedMany.
+ * Processes in sub-batches of 100 (Gemini limit) with brief delays.
+ */
+async function batchEmbed(texts: string[]): Promise<number[][]> {
+  const SUB_BATCH = 100;
+  const allEmbeddings: number[][] = [];
 
+  for (let i = 0; i < texts.length; i += SUB_BATCH) {
+    const batch = texts.slice(i, i + SUB_BATCH);
+    const { embeddings: batchResult } = await embedMany({
+      model: google.textEmbeddingModel("gemini-embedding-001"),
+      values: batch,
+      providerOptions: {
+        google: { outputDimensionality: 768 },
+      },
+    });
+    allEmbeddings.push(...batchResult);
+
+    if (i + SUB_BATCH < texts.length) {
+      await sleep(BATCH_DELAY_MS);
+    }
+  }
+
+  return allEmbeddings;
+}
+
+// Custom LangChain Embeddings (wraps Vercel AI SDK for exact 768-dim compat)
+
+class GeminiEmbeddings extends Embeddings {
   constructor(params?: EmbeddingsParams) {
     super({ maxRetries: 5, ...(params ?? {}) });
   }
 
   async embedDocuments(texts: string[]): Promise<number[][]> {
-    const results: number[][] = [];
-    for (const text of texts) {
-      results.push(await this.embedQuery(text));
-      // Rate-limit between calls for Gemini free tier
-      await sleep(RATE_LIMIT_DELAY_MS);
-    }
-    return results;
+    return batchEmbed(texts);
   }
 
   async embedQuery(text: string): Promise<number[]> {
@@ -56,7 +78,7 @@ class GeminiEmbeddings extends Embeddings {
 // Shared singleton — LangChain's built-in `this.caller` handles retries + backoff
 const embeddings = new GeminiEmbeddings();
 
-// Language-Aware Text Splitters 
+// ─── Language-Aware Text Splitters ──────────────────────────────────────────
 
 const CHUNK_SIZE = 4000;
 const CHUNK_OVERLAP = 400;
@@ -103,55 +125,94 @@ function getSplitterForFile(filePath: string): RecursiveCharacterTextSplitter {
   });
 }
 
-//  Exported: generateEmbedding (kept for backward compat)
+// ─── Exported: generateEmbedding (kept for backward compat) ─────────────────
 
 export async function generateEmbedding(text: string): Promise<number[]> {
   return embeddings.embedQuery(text);
 }
 
-//  Exported: indexCodebase 
+// ─── Exported: indexCodebase ────────────────────────────────────────────────
+
 export async function indexCodebase(
   repoId: string,
   files: { path: string; content: string }[]
 ) {
+  // Phase 1: Chunk all files (CPU-only, very fast)
+  const allChunks: { text: string; path: string; chunkIndex: number }[] = [];
+
+  for (const file of files) {
+    if (!file) continue;
+    const fullContent = `File: ${file.path}\n\n${file.content}`;
+    const splitter = getSplitterForFile(file.path);
+    const chunks = await splitter.splitText(fullContent);
+
+    for (let ci = 0; ci < chunks.length; ci++) {
+      allChunks.push({ text: chunks[ci]!, path: file.path, chunkIndex: ci });
+    }
+  }
+
+  console.log(`[Indexing] Chunked ${files.length} files → ${allChunks.length} chunks`);
+
+  // Phase 2: Batch embed all chunks (100 per API call)
+  const EMBED_BATCH = 100;
   const vectors: {
     id: string;
     values: number[];
     metadata: { repoId: string; path: string; content: string; chunkIndex: number };
   }[] = [];
 
-  for (const file of files) {
-    if (!file) continue;
+  for (let i = 0; i < allChunks.length; i += EMBED_BATCH) {
+    const batch = allChunks.slice(i, i + EMBED_BATCH);
+    const texts = batch.map((c) => c.text);
 
-    const fullContent = `File: ${file.path}\n\n${file.content}`;
-    const splitter = getSplitterForFile(file.path);
-    const chunks = await splitter.splitText(fullContent);
+    try {
+      const batchEmbeddings = await batchEmbed(texts);
 
-    for (let ci = 0; ci < chunks.length; ci++) {
-      const chunkText = chunks[ci]!;
-      try {
-        const embedding = await embeddings.embedQuery(chunkText);
-        const safePathPart = file.path.replace(/\//g, "-");
+      for (let j = 0; j < batch.length; j++) {
+        const chunk = batch[j]!;
+        const safePathPart = chunk.path.replace(/\//g, "-");
         vectors.push({
-          id: `${repoId}-${safePathPart}-chunk-${ci}`,
-          values: embedding,
+          id: `${repoId}-${safePathPart}-chunk-${chunk.chunkIndex}`,
+          values: batchEmbeddings[j]!,
           metadata: {
             repoId,
-            path: file.path,
-            content: chunkText,
-            chunkIndex: ci,
+            path: chunk.path,
+            content: chunk.text,
+            chunkIndex: chunk.chunkIndex,
           },
         });
-      } catch (error) {
-        console.log(`Failed to embed ${file.path} chunk ${ci}:`, error);
       }
-
-      // Rate-limit between embedding calls
-      await sleep(RATE_LIMIT_DELAY_MS);
+    } catch (error) {
+      console.error(`[Indexing] Batch embed failed at ${i}, falling back to sequential:`, error);
+      for (const chunk of batch) {
+        try {
+          const emb = await embeddings.embedQuery(chunk.text);
+          const safePathPart = chunk.path.replace(/\//g, "-");
+          vectors.push({
+            id: `${repoId}-${safePathPart}-chunk-${chunk.chunkIndex}`,
+            values: emb,
+            metadata: {
+              repoId,
+              path: chunk.path,
+              content: chunk.text,
+              chunkIndex: chunk.chunkIndex,
+            },
+          });
+        } catch (err) {
+          console.log(`Failed to embed ${chunk.path} chunk ${chunk.chunkIndex}:`, err);
+        }
+        await sleep(200);
+      }
     }
+
+    if (i + EMBED_BATCH < allChunks.length) {
+      await sleep(BATCH_DELAY_MS);
+    }
+
+    console.log(`[Indexing] Embedded ${Math.min(i + EMBED_BATCH, allChunks.length)}/${allChunks.length} chunks`);
   }
 
-  // Batch upsert to Pinecone
+  // Phase 3: Batch upsert to Pinecone
   if (vectors.length > 0) {
     const batchSize = 100;
     for (let i = 0; i < vectors.length; i += batchSize) {
@@ -159,11 +220,12 @@ export async function indexCodebase(
     }
   }
 
-  console.log("Indexing completed. Total vectors indexed:", vectors.length);
+  console.log("[Indexing] Completed. Total vectors indexed:", vectors.length);
   return vectors.length;
 }
 
-//  Exported: retrieveContext
+// ─── Exported: retrieveContext ──────────────────────────────────────────────
+
 export async function retrieveContext(
   query: string,
   repoId: string,
@@ -183,13 +245,14 @@ export async function retrieveContext(
     .filter(Boolean);
 }
 
-//  Exported: updateCodebaseIndex (delta re-indexing on push)
+// ─── Exported: updateCodebaseIndex (delta re-indexing on push) ──────────────
+
 export async function updateCodebaseIndex(
   repoId: string,
   changedFiles: { path: string; content: string }[],
   removedPaths: string[]
 ) {
-  // 1. Delete vectors for removed files (metadata filter)
+  // 1. Delete vectors for removed files
   if (removedPaths.length > 0) {
     for (const filePath of removedPaths) {
       try {
@@ -203,7 +266,6 @@ export async function updateCodebaseIndex(
 
   // 2. Delete old chunks for changed files, then re-index them
   if (changedFiles.length > 0) {
-    // Delete existing chunks for all changed files first
     for (const file of changedFiles) {
       try {
         await pineconeIndex.deleteMany({ repoId, path: file.path });
@@ -212,40 +274,61 @@ export async function updateCodebaseIndex(
       }
     }
 
-    // Now re-index changed files with language-aware chunking
+    // Chunk all changed files
+    const allChunks: { text: string; path: string; chunkIndex: number }[] = [];
+    for (const file of changedFiles) {
+      if (!file) continue;
+      const fullContent = `File: ${file.path}\n\n${file.content}`;
+      const splitter = getSplitterForFile(file.path);
+      const chunks = await splitter.splitText(fullContent);
+      for (let ci = 0; ci < chunks.length; ci++) {
+        allChunks.push({ text: chunks[ci]!, path: file.path, chunkIndex: ci });
+      }
+    }
+
+    // Batch embed
     const vectors: {
       id: string;
       values: number[];
       metadata: { repoId: string; path: string; content: string; chunkIndex: number };
     }[] = [];
 
-    for (const file of changedFiles) {
-      if (!file) continue;
+    const EMBED_BATCH = 100;
+    for (let i = 0; i < allChunks.length; i += EMBED_BATCH) {
+      const batch = allChunks.slice(i, i + EMBED_BATCH);
+      const texts = batch.map((c) => c.text);
 
-      const fullContent = `File: ${file.path}\n\n${file.content}`;
-      const splitter = getSplitterForFile(file.path);
-      const chunks = await splitter.splitText(fullContent);
-
-      for (let ci = 0; ci < chunks.length; ci++) {
-        const chunkText = chunks[ci]!;
-        try {
-          const embedding = await embeddings.embedQuery(chunkText);
-          const safePathPart = file.path.replace(/\//g, "-");
+      try {
+        const batchEmbeddings = await batchEmbed(texts);
+        for (let j = 0; j < batch.length; j++) {
+          const chunk = batch[j]!;
+          const safePathPart = chunk.path.replace(/\//g, "-");
           vectors.push({
-            id: `${repoId}-${safePathPart}-chunk-${ci}`,
-            values: embedding,
-            metadata: {
-              repoId,
-              path: file.path,
-              content: chunkText,
-              chunkIndex: ci,
-            },
+            id: `${repoId}-${safePathPart}-chunk-${chunk.chunkIndex}`,
+            values: batchEmbeddings[j]!,
+            metadata: { repoId, path: chunk.path, content: chunk.text, chunkIndex: chunk.chunkIndex },
           });
-        } catch (error) {
-          console.log(`Failed to embed ${file.path} chunk ${ci}:`, error);
         }
+      } catch (error) {
+        console.error(`Delta batch embed failed at ${i}:`, error);
+        for (const chunk of batch) {
+          try {
+            const emb = await embeddings.embedQuery(chunk.text);
+            const safePathPart = chunk.path.replace(/\//g, "-");
+            vectors.push({
+              id: `${repoId}-${safePathPart}-chunk-${chunk.chunkIndex}`,
+              values: emb,
+              metadata: { repoId, path: chunk.path, content: chunk.text, chunkIndex: chunk.chunkIndex },
+            });
+          } catch (err) {
+            console.log(`Failed to embed ${chunk.path} chunk ${chunk.chunkIndex}:`, err);
+          }
+          await sleep(200);
+        }
+      }
 
-        await sleep(RATE_LIMIT_DELAY_MS);
+      if (i + EMBED_BATCH < allChunks.length) {
+        await sleep(BATCH_DELAY_MS);
       }
     }
 
@@ -263,7 +346,7 @@ export async function updateCodebaseIndex(
   return 0;
 }
 
-//  Feature A: Documentation Generation (Multi-Query RAG)
+// ─── Feature A: Documentation Generation (Multi-Query RAG) ──────────────────
 
 const DOC_QUERIES: Record<string, string[]> = {
   readme: [
@@ -344,7 +427,7 @@ export async function generateDocMarkdown(
   return text;
 }
 
-//  Exported: deleteRepoVectors
+// ─── Exported: deleteRepoVectors ────────────────────────────────────────────
 
  //  Delete all vectors for a given repository.
  //  Used when disconnecting a repo to clean up Pinecone.

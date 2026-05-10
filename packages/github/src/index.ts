@@ -29,12 +29,104 @@ function decodeBase64(base64: string): string {
   return new TextDecoder("utf-8").decode(bytes);
 }
 
+/** Regex for binary/media file extensions to skip */
+const BINARY_EXT_RE = /\.(png|jpg|jpeg|gif|svg|ico|pdf|zip|tar|gz|woff|woff2|ttf|eot|mp4|mp3|mov|avi|lock|wasm|bin|dat|db|sqlite)$/i;
+
+/** Regex for directories to skip */
+const SKIP_DIR_RE = /(^|\/)(node_modules|\.git|\.next|dist|build|coverage|__pycache__|\.cache|vendor)(\/|$)/i;
 
 export function createOctokit(token: string): Octokit {
   return new Octokit({ auth: token });
 }
 
+// ─── Fast repo fetch using Git Trees API ────────────────────────────────────
+
 export async function getRepoFileContents(
+  token: string,
+  owner: string,
+  repo: string,
+  path: string = ""
+): Promise<GitHubFile[]> {
+  const octokit = createOctokit(token);
+
+  try {
+    // 1. Get default branch
+    const { data: repoData } = await octokit.rest.repos.get({ owner, repo });
+    const defaultBranch = repoData.default_branch;
+
+    // 2. Get HEAD ref
+    const { data: ref } = await octokit.rest.git.getRef({
+      owner,
+      repo,
+      ref: `heads/${defaultBranch}`,
+    });
+
+    // 3. Fetch the ENTIRE tree in a single API call
+    const { data: tree } = await octokit.rest.git.getTree({
+      owner,
+      repo,
+      tree_sha: ref.object.sha,
+      recursive: "true",
+    });
+
+    if (tree.truncated) {
+      console.warn("Tree truncated (very large repo), falling back to recursive fetch");
+      return getRepoFileContentsLegacy(token, owner, repo, path);
+    }
+
+    // 4. Filter to code files only
+    const codeBlobs = tree.tree.filter((item) => {
+      if (item.type !== "blob" || !item.path || !item.sha) return false;
+      if (path && !item.path.startsWith(path.endsWith("/") ? path : `${path}/`)) return false;
+      if (BINARY_EXT_RE.test(item.path)) return false;
+      if (SKIP_DIR_RE.test(item.path)) return false;
+      if (item.size && item.size > 100_000) return false;
+      return true;
+    });
+
+    console.log(`[Trees API] ${tree.tree.length} total entries → ${codeBlobs.length} code files`);
+
+    // 5. Fetch file blobs in parallel batches of 15
+    const CONCURRENT = 15;
+    const files: GitHubFile[] = [];
+
+    for (let i = 0; i < codeBlobs.length; i += CONCURRENT) {
+      const batch = codeBlobs.slice(i, i + CONCURRENT);
+      const results = await Promise.allSettled(
+        batch.map(async (item) => {
+          const { data: blob } = await octokit.rest.git.getBlob({
+            owner,
+            repo,
+            file_sha: item.sha!,
+          });
+          if (blob.encoding === "base64" && blob.content) {
+            return {
+              path: item.path!,
+              content: decodeBase64(blob.content.replace(/\n/g, "")),
+            };
+          }
+          return null;
+        })
+      );
+
+      for (const result of results) {
+        if (result.status === "fulfilled" && result.value) {
+          files.push(result.value);
+        }
+      }
+    }
+
+    console.log(`[Trees API] Fetched ${files.length} file contents`);
+    return files;
+  } catch (error: any) {
+    console.error(`Trees API failed for ${owner}/${repo}:`, error.message);
+    return getRepoFileContentsLegacy(token, owner, repo, path);
+  }
+}
+
+// ─── Legacy recursive fetch (fallback) ──────────────────────────────────────
+
+async function getRepoFileContentsLegacy(
   token: string,
   owner: string,
   repo: string,
@@ -50,69 +142,33 @@ export async function getRepoFileContents(
     });
 
     if (!Array.isArray(data)) {
-      // It's a file
       if (data.type === "file" && data.content) {
-        return [
-          {
-            path: data.path,
-            content: decodeBase64(data.content),
-          },
-        ];
+        return [{ path: data.path, content: decodeBase64(data.content) }];
       }
       return [];
     }
 
-    // Directory case
     let files: GitHubFile[] = [];
 
     for (const item of data) {
-      // Skip non-code files
-      if (
-        item.path.match(
-          /\.(png|jpg|jpeg|gif|svg|ico|pdf|zip|tar|gz|woff|woff2|ttf|eot|mp4|mp3|mov|avi)$/i
-        )
-      ) {
-        continue;
-      }
-
-      // Skip common directories
-      if (
-        item.path.match(
-          /^(node_modules|\.git|\.next|dist|build|coverage|__pycache__|\.cache|vendor)$/i
-        )
-      ) {
-        continue;
-      }
+      if (BINARY_EXT_RE.test(item.path)) continue;
+      if (item.path.match(/^(node_modules|\.git|\.next|dist|build|coverage|__pycache__|\.cache|vendor)$/i)) continue;
 
       if (item.type === "file") {
         try {
-          const { data: fileData } = await octokit.rest.repos.getContent({
-            owner,
-            repo,
-            path: item.path,
-          });
-
-          if (
-            !Array.isArray(fileData) &&
-            fileData.type === "file" &&
-            fileData.content
-          ) {
-            files.push({
-              path: item.path,
-              content: decodeBase64(fileData.content),
-            });
+          const { data: fileData } = await octokit.rest.repos.getContent({ owner, repo, path: item.path });
+          if (!Array.isArray(fileData) && fileData.type === "file" && fileData.content) {
+            files.push({ path: item.path, content: decodeBase64(fileData.content) });
           }
         } catch (error) {
           console.warn(`Skipping file ${item.path}:`, error);
-          continue;
         }
       } else if (item.type === "dir") {
         try {
-          const subFiles = await getRepoFileContents(token, owner, repo, item.path);
+          const subFiles = await getRepoFileContentsLegacy(token, owner, repo, item.path);
           files = files.concat(subFiles);
         } catch (error) {
           console.warn(`Skipping directory ${item.path}:`, error);
-          continue;
         }
       }
     }
@@ -120,12 +176,12 @@ export async function getRepoFileContents(
     return files;
   } catch (error: any) {
     console.error(`Error fetching content for ${owner}/${repo}/${path}:`, error.message);
-    if (error.status === 404) {
-      return [];
-    }
+    if (error.status === 404) return [];
     throw error;
   }
 }
+
+// ─── Everything below is unchanged ──────────────────────────────────────────
 
 export async function getPullRequestDiff(
   token: string,
@@ -336,7 +392,7 @@ export function parseDiffPositions(patch: string): Map<number, { side: "LEFT" | 
   let oldLine = 0;
 
   for (const line of lines) {
-    const hunkMatch = line.match(/^@@\s+-(\d+)(?:,\d+)?\s+\+(\d+)(?:,\d+)?\s+@@/);
+    const hunkMatch = line.match(/^@@\s+\-(\d+)(?:,\d+)?\s+\+(\d+)(?:,\d+)?\s+@@/);
     if (hunkMatch && hunkMatch[1] !== undefined && hunkMatch[2] !== undefined) {
       oldLine = parseInt(hunkMatch[1], 10);
       newLine = parseInt(hunkMatch[2], 10);
